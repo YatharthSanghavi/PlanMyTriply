@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block title %} - {{ guide.title }}{% endblock %}
+
+{% block content %}
+<!-- Guide Hero -->
+<div class="guide-hero position-relative overflow-hidden" style="background: linear-gradient(135deg, {{ guide.default_bg_color }}, {{ guide.default_bg_color }}aa)">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-end py-5">
+            <div class="col-lg-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-3">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('travel_guides') }}" class="btn btn-light">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Guides
+                            </a>
+                        </li>
+                    </ol>
+                </nav>
+                <span class="badge bg-white text-primary mb-3">{{ guide.category }}</span>
+                <h1 class="display-4 fw-bold text-white mb-3">{{ guide.title }}</h1>
+                <div class="d-flex align-items-center text-white gap-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <span>{{ guide.author }}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar me-2"></i>
+                        <span>
+                            {% if guide.created_at %}
+                                {% if guide.created_at is string %}
+                                    {{ guide.created_at.split('T')[0] }}
+                                {% else %}
+                                    {{ guide.created_at.strftime('%B %d, %Y') }}
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <article class="guide-content">
+                <!-- Guide Content -->
+                <div class="card shadow-sm">
+                    <div class="card-body p-4 p-md-5">
+                        <!-- Guide Tags -->
+                        <div class="guide-tags mb-4">
+                            {% for tag in guide.tags %}
+                            <span class="guide-tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Guide Excerpt -->
+                        <div class="guide-excerpt mb-5">
+                            <div class="p-4 bg-light rounded-3 border">
+                                <h5 class="mb-3">Overview</h5>
+                                <p class="lead mb-0">{{ guide.excerpt }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Guide Body -->
+                        <div class="guide-body" id="guideContent">
+                            {% for section in guide.content.split('#') %}
+                                {% if section.strip() %}
+                                    {% set section_parts = section.strip().split('\n', 1) %}
+                                    {% if section_parts|length > 0 %}
+                                        <div class="content-section mb-4">
+                                            <h2>{{ section_parts[0].strip() }}</h2>
+                                            {% if section_parts|length > 1 %}
+                                                <ul class="point-list">
+                                                    {% for point in section_parts[1].strip().split('\n') %}
+                                                        {% if point.strip() %}
+                                                            <li class="point-item">{{ point.strip() }}</li>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-lg-top" style="top: 2rem; z-index: 10;">
+                <!-- Author Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="author-icon me-3">
+                                <i class="bi bi-person-circle display-6"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">{{ guide.author }}</h5>
+                                <p class="text-muted mb-0">Travel Writer</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Share Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-4">Share this Guide</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary flex-grow-1" onclick="shareOnTwitter()">
+                                <i class="bi bi-twitter"></i>
+                            </button>
+                            <button class="btn btn-outline-primary flex-grow-1" onclick="shareOnFacebook()">
+                                <i class="bi bi-facebook"></i>
+                            </button>
+                            <button class="btn btn-outline-primary flex-grow-1" onclick="shareOnLinkedIn()">
+                                <i class="bi bi-linkedin"></i>
+                            </button>
+                            <button class="btn btn-outline-primary flex-grow-1" onclick="copyLink()">
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+    --primary-color: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-light: #818CF8;
+    --transition: all 0.3s ease;
+}
+
+.guide-hero {
+    min-height: 60vh;
+    display: flex;
+    align-items: flex-end;
+}
+
+.hero-bg {
+    background-size: cover;
+    background-position: center;
+    opacity: 0.1;
+}
+
+/* Guide Content Styling */
+.guide-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary-color);
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: var(--transition);
+}
+
+.guide-tag:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.guide-body {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+/* Content Section Styling */
+.content-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+}
+
+.content-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.content-section h2 {
+    color: var(--primary-dark);
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid var(--primary-light);
+}
+
+/* Point List Styling */
+.point-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.point-item {
+    position: relative;
+    padding: 1rem 1rem 1rem 3rem;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    transition: var(--transition);
+}
+
+.point-item:last-child {
+    margin-bottom: 0;
+}
+
+.point-item::before {
+    content: '→';
+    position: absolute;
+    left: 1rem;
+    color: var(--primary-color);
+    font-weight: bold;
+    transition: var(--transition);
+}
+
+.point-item:hover {
+    transform: translateX(10px);
+    background: #f1f5f9;
+}
+
+.point-item:hover::before {
+    transform: translateX(5px);
+}
+
+/* Progress Bar */
+.progress {
+    background: #e5e7eb;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: var(--primary-gradient);
+    transition: width 0.3s ease;
+}
+
+.sticky-lg-top {
+    position: sticky;
+    background: transparent;
+}
+
+@media (max-width: 991px) {
+    .sticky-lg-top {
+        position: relative !important;
+        top: 0 !important;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .guide-hero {
+        min-height: 40vh;
+    }
+
+    .content-section {
+        padding: 1.5rem;
+    }
+
+    .point-item {
+        padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+    }
+
+    .point-item::before {
+        left: 0.75rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Social sharing functions
+function shareOnTwitter() {
+    const text = encodeURIComponent("Check out this travel guide: {{ guide.title }}");
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+}
+
+function shareOnFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+}
+
+function shareOnLinkedIn() {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent("{{ guide.title }}");
+    window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}`, '_blank');
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('Link copied to clipboard!');
+    });
+}
+
+function showToast(message) {
+    const toastHtml = `
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+
+    const toastContainer = document.querySelector('.toast-container');
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% block title %} - Hotel Recommendations{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hotel-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-3">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('hotel_searches') }}" class="btn btn-light">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Searches
+                            </a>
+                        </li>
+                    </ol>
+                </nav>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Hotels in {{ search.location }}
+                </h1>
+                <div class="d-flex flex-wrap gap-3 text-white">
+                    <div class="search-detail">
+                        <i class="bi bi-people me-2"></i>
+                        {{ search.guests }} guests
+                    </div>
+                    <div class="search-detail">
+                        <i class="bi bi-wallet2 me-2"></i>
+                        {{ search.budget }} budget
+                    </div>
+                    {% if search.preferences %}
+                    <div class="search-detail">
+                        <i class="bi bi-star me-2"></i>
+                        {{ search.preferences }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <!-- Main Content - Full Width -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-body p-4">
+            <div class="recommendations markdown-content">
+                {{ search.recommendations | safe }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Details and External Sources
+    <div class="row g-4">
+        Search Details 
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-4">Search Details</h5>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="detail-item">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Location</small>
+                                <strong>{{ search.location }}</strong>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="bi bi-people text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Guests</small>
+                                <strong>{{ search.guests }} guests</strong>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="bi bi-wallet2 text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Budget</small>
+                                <strong>{{ search.budget }}</strong>
+                            </div>
+                        </div>
+                        {% if search.preferences %}
+                        <div class="detail-item">
+                            <i class="bi bi-star text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">Preferences</small>
+                                <strong>{{ search.preferences }}</strong>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        External Sources
+        <div class="col-md-6">
+            {% if search.search_results %}
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="mb-4">External Sources</h5>
+                    <div class="d-flex flex-column gap-3">
+                        {% for result in search.search_results %}
+                            <a href="{{ result.url }}" target="_blank" class="search-result-link">
+                                <div class="search-result">
+                                    <h6 class="mb-2">{{ result.title }}</h6>
+                                    <p class="small text-muted mb-0">{{ result.snippet }}</p>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div> -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+    --primary-color: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-light: #818CF8;
+    --transition: all 0.3s ease;
+}
+
+.hotel-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 40vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?{{ search.location }}-hotel') center/cover;
+    opacity: 0.2;
+}
+
+.search-detail {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.detail-item i {
+    font-size: 1.25rem;
+}
+
+/* Enhanced Markdown Content Styling */
+.markdown-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.markdown-content h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 2.5rem 0 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--primary-light);
+}
+
+.markdown-content h1:first-child {
+    margin-top: 0;
+}
+
+.markdown-content h2 {
+    font-size: 1.75rem;
+    color: var(--primary-color);
+    margin: 2rem 0 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-light);
+}
+
+.markdown-content h3 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 1.5rem 0 1rem;
+    font-weight: 600;
+}
+
+.markdown-content p {
+    margin-bottom: 1.5rem;
+    color: #374151;
+}
+
+.markdown-content ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 1.5rem;
+}
+
+.markdown-content ul ul {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    padding-left: 1.5rem;
+}
+
+.markdown-content ul li {
+    position: relative;
+    padding: 0.75rem 0.75rem 0.75rem 2rem;
+    margin-bottom: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    transition: var(--transition);
+}
+
+.markdown-content ul ul li {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 0.5rem;
+}
+
+.markdown-content ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0.75rem;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.markdown-content ul ul li::before {
+    content: '•';
+}
+
+.markdown-content ul li:hover {
+    transform: translateX(5px);
+    background: #f1f5f9;
+}
+
+.markdown-content ul ul li:hover {
+    background: #f8f9fa;
+}
+
+.markdown-content strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.markdown-content a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.markdown-content a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Hotel Section Styling */
+.markdown-content .hotel-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+}
+
+.markdown-content .hotel-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Search Results Styling */
+.search-result-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.search-result {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+    transition: var(--transition);
+}
+
+.search-result:hover {
+    background: #f1f5f9;
+    transform: translateX(5px);
+}
+
+@media (max-width: 768px) {
+    .hotel-hero {
+        min-height: 30vh;
+    }
+
+    .markdown-content h1 {
+        font-size: 2rem;
+    }
+
+    .markdown-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .markdown-content h3 {
+        font-size: 1.25rem;
+    }
+
+    .markdown-content .hotel-section {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Wrap hotel sections
+    const hotelSections = document.querySelectorAll('.markdown-content h3');
+    hotelSections.forEach(section => {
+        // Create wrapper div
+        const wrapper = document.createElement('div');
+        wrapper.className = 'hotel-section';
+        
+        // Collect all elements until next h3 or end
+        let elements = [];
+        let nextEl = section.nextElementSibling;
+        while (nextEl && nextEl.tagName !== 'H3') {
+            elements.push(nextEl);
+            nextEl = nextEl.nextElementSibling;
+        }
+        
+        // Move elements into wrapper
+        section.parentNode.insertBefore(wrapper, section);
+        wrapper.appendChild(section);
+        elements.forEach(el => wrapper.appendChild(el));
+    });
+
+    // Add smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+
+    // Add hover effect for hotel sections
+    document.querySelectorAll('.hotel-section').forEach(section => {
+        section.addEventListener('mouseenter', () => {
+            section.style.transform = 'translateY(-5px)';
+        });
+        section.addEventListener('mouseleave', () => {
+            section.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

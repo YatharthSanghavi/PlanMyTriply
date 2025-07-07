@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block title %} - Hotel Search{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hotel-search-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white text-primary px-4 py-2 mb-3">AI-Powered Hotel Search</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Find Your Perfect Stay
+                </h1>
+                <p class="lead text-white mb-0">
+                    Let our AI find the best hotel matches based on your preferences
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container position-relative" style="margin-top: -3rem;">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-gradient p-4 rounded-top-4">
+                    <div class="d-flex align-items-center">
+                        <div class="feature-icon bg-white rounded-circle p-3 me-3">
+                            <i class="bi bi-building fs-4 text-primary"></i>
+                        </div>
+                        <div>
+                            <h2 class="card-title h3 mb-1">Search Hotels</h2>
+                            <p class="text-muted mb-0">Enter your preferences for personalized recommendations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('hotel_search') }}" class="needs-validation" novalidate id="hotelSearchForm">
+                        <!-- Location -->
+                        <div class="form-group mb-4">
+                            <label class="form-label h6" for="location">
+                                <i class="bi bi-geo-alt text-primary me-2"></i>Where would you like to stay?
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0 ps-0" 
+                                       id="location" 
+                                       name="location" 
+                                       placeholder="e.g., Paris, New York, Tokyo"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <!-- Number of Guests -->
+                            <div class="col-md-6">
+                                <label class="form-label h6" for="guests">
+                                    <i class="bi bi-people text-primary me-2"></i>Number of Guests
+                                </label>
+                                <select class="form-select form-select-lg" id="guests" name="guests">
+                                    {% for i in range(1, 11) %}
+                                    <option value="{{ i }}" {% if i == 2 %}selected{% endif %}>
+                                        {{ i }} guest{% if i != 1 %}s{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Budget -->
+                            <div class="col-md-6">
+                                <label class="form-label h6" for="budget">
+                                    <i class="bi bi-wallet2 text-primary me-2"></i>Budget Level
+                                </label>
+                                <select class="form-select form-select-lg" id="budget" name="budget">
+                                    <option value="budget">Budget-friendly</option>
+                                    <option value="medium" selected>Mid-range</option>
+                                    <option value="luxury">Luxury</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preferences -->
+                        <div class="form-group my-4">
+                            <label class="form-label h6" for="preferences">
+                                <i class="bi bi-star text-primary me-2"></i>Special Preferences
+                            </label>
+                            <textarea class="form-control form-control-lg"
+                                      id="preferences"
+                                      name="preferences"
+                                      rows="3"
+                                      placeholder="e.g., pool, spa, beach access, pet-friendly, near attractions"></textarea>
+                            <div class="form-text">Tell us about any specific amenities or features you're looking for</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg py-3" id="searchButton">
+                                <i class="bi bi-search me-2"></i>Search Hotels
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-5">
+                <div class="text-center">
+                    <div class="loading-animation mb-4">
+                        <div class="hotel-loader">
+                            <div class="hotel-icon">
+                                <i class="bi bi-building"></i>
+                            </div>
+                            <div class="search-waves"></div>
+                        </div>
+                    </div>
+                    
+                    <h4 class="mb-3">Finding Your Perfect Hotel</h4>
+                    <p class="text-muted mb-4" id="loadingMessage">Searching for the best matches...</p>
+                    
+                    <div class="progress mb-4" style="height: 8px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="loading-steps text-start">
+                        <div class="step-item d-flex align-items-center mb-3">
+                            <div class="step-icon me-3">
+                                <i class="bi bi-search"></i>
+                            </div>
+                            <div class="step-text">Searching available hotels...</div>
+                            <div class="step-status ms-auto"></div>
+                        </div>
+                        <div class="step-item d-flex align-items-center mb-3">
+                            <div class="step-icon me-3">
+                                <i class="bi bi-stars"></i>
+                            </div>
+                            <div class="step-text">Analyzing ratings and reviews...</div>
+                            <div class="step-status ms-auto"></div>
+                        </div>
+                        <div class="step-item d-flex align-items-center mb-3">
+                            <div class="step-icon me-3">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div class="step-text">Comparing prices and value...</div>
+                            <div class="step-status ms-auto"></div>
+                        </div>
+                        <div class="step-item d-flex align-items-center">
+                            <div class="step-icon me-3">
+                                <i class="bi bi-magic"></i>
+                            </div>
+                            <div class="step-text">Generating personalized recommendations...</div>
+                            <div class="step-status ms-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hotel-search-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 50vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?luxury-hotel') center/cover;
+    opacity: 0.2;
+}
+
+.form-control, .form-select {
+    border: 1px solid #E5E7EB;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.input-group-text {
+    border-radius: 1rem 0 0 1rem;
+    border: 1px solid #E5E7EB;
+    padding: 0.75rem 1.25rem;
+}
+
+.input-group .form-control {
+    border-radius: 0 1rem 1rem 0;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+}
+
+.feature-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Loading Animation Styles */
+.loading-animation {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.hotel-loader {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.hotel-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    color: #4F46E5;
+    z-index: 2;
+}
+
+.search-waves {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 4px solid #4F46E5;
+    border-radius: 50%;
+    animation: pulse 1.5s ease-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Loading Steps Styles */
+.step-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: rgba(79, 70, 229, 0.1);
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.step-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 50%;
+    color: #4F46E5;
+}
+
+.step-status {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-item.active {
+    background: rgba(79, 70, 229, 0.2);
+}
+
+.step-item.completed {
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.step-item.completed .step-icon {
+    color: #22C55E;
+}
+
+@media (max-width: 768px) {
+    .hotel-search-hero {
+        min-height: 40vh;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('hotelSearchForm');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    const progressBar = document.querySelector('.progress-bar');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const steps = document.querySelectorAll('.step-item');
+    
+    const messages = [
+        'Searching available hotels...',
+        'Analyzing ratings and reviews...',
+        'Comparing prices and value...',
+        'Generating personalized recommendations...'
+    ];
+
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+            form.classList.add('was-validated');
+            return;
+        }
+
+        // Show loading modal
+        loadingModal.show();
+        
+        // Start progress animation
+        let progress = 0;
+        let currentStep = 0;
+        
+        const interval = setInterval(() => {
+            progress += 1;
+            progressBar.style.width = `${progress}%`;
+            
+            // Update steps
+            if (progress % 25 === 0 && currentStep < steps.length) {
+                steps[currentStep].classList.add('active');
+                if (currentStep > 0) {
+                    steps[currentStep - 1].classList.remove('active');
+                    steps[currentStep - 1].classList.add('completed');
+                    steps[currentStep - 1].querySelector('.step-status').innerHTML = 
+                        '<i class="bi bi-check-circle-fill text-success"></i>';
+                }
+                loadingMessage.textContent = messages[currentStep];
+                currentStep++;
+            }
+            
+            if (progress >= 100) {
+                clearInterval(interval);
+                steps[steps.length - 1].classList.remove('active');
+                steps[steps.length - 1].classList.add('completed');
+                steps[steps.length - 1].querySelector('.step-status').innerHTML = 
+                    '<i class="bi bi-check-circle-fill text-success"></i>';
+                form.submit();
+            }
+        }, 50);
+    });
+});
+</script>
+{% endblock %}

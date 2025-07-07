@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %} - About Us{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="about-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white text-primary px-4 py-2 mb-3">About Us</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Our Story
+                </h1>
+                <p class="lead text-white mb-0">
+                    Transforming travel planning with AI technology
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <section class="mb-5">
+                        <h2 class="h1 mb-4">Who We Are</h2>
+                        <p class="lead mb-4">PlanMyTriply AI is a cutting-edge travel planning platform that combines artificial intelligence with human expertise to create personalized travel experiences.</p>
+                        <p>Founded in 2025, our mission is to make travel planning effortless and enjoyable. We believe that every journey should be unique and tailored to the traveler's preferences, interests, and style.</p>
+                    </section>
+
+                    <section class="mb-5">
+                        <h2 class="h1 mb-4">Our Mission</h2>
+                        <p>We're dedicated to revolutionizing the way people plan their travels. By leveraging advanced AI technology, we create personalized itineraries that consider your preferences, budget, and travel style.</p>
+                        <div class="row g-4 mt-4">
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-lightbulb text-primary fs-2"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h3 class="h5">Innovation</h3>
+                                        <p>Using cutting-edge AI to create unique travel experiences</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-person-heart text-primary fs-2"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h3 class="h5">Personalization</h3>
+                                        <p>Tailoring each itinerary to individual preferences</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.about-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 40vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?travel') center/cover;
+    opacity: 0.2;
+}
+
+.card {
+    border: none;
+    border-radius: 1rem;
+}
+
+.rounded-circle {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+}
+</style>
+{% endblock %}

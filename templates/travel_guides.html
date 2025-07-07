@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %} - Travel Guides{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="guides-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white text-primary px-4 py-2 mb-3">Travel Resources</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Travel Guides & Tips
+                </h1>
+                <p class="lead text-white mb-4">
+                    Expert insights and detailed guides for your next adventure
+                </p>
+                <a href="{{ url_for('create_guide') }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Guide
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <!-- Filters and Search -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-8">
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-primary active" data-category="all">All Guides</button>
+                {% for category in categories %}
+                <button class="btn btn-outline-primary" data-category="{{ category }}">
+                    {{ category }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="search-box">
+                <input type="text" class="form-control" placeholder="Search guides...">
+                <i class="bi bi-search"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Travel Guides Grid -->
+    <div class="row g-4">
+        {% for guide in guides %}
+        <div class="col-md-6 col-lg-4">
+            <article class="guide-card h-100" style="background: linear-gradient(135deg, {{ guide.default_bg_color }}, {{ guide.default_bg_color }}aa)">
+                <div class="guide-content p-4">
+                    <div class="guide-icon mb-4">
+                        <i class="bi bi-{{ guide.icon or 'compass' }} display-4 text-white"></i>
+                    </div>
+                    <div class="guide-category mb-3">{{ guide.category }}</div>
+                    <h2 class="h5 mb-3 text-white">{{ guide.title }}</h2>
+                    <p class="text-white-75 mb-3">{{ guide.excerpt }}</p>
+                    <div class="guide-meta d-flex justify-content-between align-items-center text-white-75">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span>{{ guide.author }}</span>
+                        </div>
+                        <small>
+                            {% if guide.created_at %}
+                                {% if guide.created_at is string %}
+                                    {{ guide.created_at.split('T')[0] }}
+                                {% else %}
+                                    {{ guide.created_at.strftime('%B %d, %Y') }}
+                                {% endif %}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="guide-tags mt-3">
+                        {% for tag in guide.tags %}
+                        <span class="guide-tag">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                    <a href="{{ url_for('view_guide', guide_id=guide.id) }}" class="stretched-link"></a>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Empty State -->
+    {% if not guides %}
+    <div class="text-center py-5">
+        <div class="empty-state">
+            <i class="bi bi-journal-text display-1 text-muted mb-4"></i>
+            <h3>No Travel Guides Yet</h3>
+            <p class="text-muted mb-4">Be the first to create a travel guide!</p>
+            <a href="{{ url_for('create_guide') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>Create New Guide
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not prev_page %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('travel_guides', page=prev_page) if prev_page else '#' }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% for page_num in range(1, total_pages + 1) %}
+            <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('travel_guides', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not next_page %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('travel_guides', page=next_page) if next_page else '#' }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.guides-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 40vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?travel-writing') center/cover;
+    opacity: 0.2;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    padding-right: 2.5rem;
+    border-radius: 2rem;
+}
+
+.search-box i {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6B7280;
+}
+
+.guide-card {
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.guide-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.5));
+    pointer-events: none;
+    z-index: 1;
+}
+
+.guide-card:hover {
+    transform: translateY(-5px);
+}
+
+.guide-content {
+    position: relative;
+    z-index: 2;
+}
+
+.text-white, .text-white-75 {
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.guide-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+}
+
+.guide-category {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+}
+
+.guide-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.text-white-75 {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 2rem;
+    padding: 0.5rem 1.5rem;
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryButtons = document.querySelectorAll('[data-category]');
+    const searchInput = document.querySelector('.search-box input');
+    const guideCards = document.querySelectorAll('.guide-card');
+
+    // Category filtering
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            categoryButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            const category = this.dataset.category;
+            filterGuides();
+        });
+    });
+
+    // Search functionality
+    searchInput.addEventListener('input', filterGuides);
+
+    function filterGuides() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const activeCategory = document.querySelector('[data-category].active').dataset.category;
+
+        guideCards.forEach(card => {
+            const cardCategory = card.querySelector('.guide-category').textContent.toLowerCase();
+            const cardTitle = card.querySelector('h2').textContent.toLowerCase();
+            const cardExcerpt = card.querySelector('p').textContent.toLowerCase();
+
+            const matchesSearch = cardTitle.includes(searchTerm) || 
+                                cardExcerpt.includes(searchTerm);
+            const matchesCategory = activeCategory === 'all' || 
+                                  cardCategory === activeCategory.toLowerCase();
+
+            card.closest('.col-md-6').style.display = 
+                (matchesSearch && matchesCategory) ? '' : 'none';
+        });
+    }
+});
+</script>
+{% endblock %}

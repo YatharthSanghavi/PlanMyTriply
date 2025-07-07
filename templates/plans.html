@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %} - Saved Travel Plans{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="plans-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white text-primary px-4 py-2 mb-3">Travel Plans Library</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Discover Travel Plans
+                </h1>
+                <p class="lead text-white mb-4">
+                    Browse through our collection of AI-generated travel itineraries
+                </p>
+                <a href="{{ url_for('planner') }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Plan
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        {% for plan in plans %}
+        <div class="col-md-6 col-lg-4">
+            <div class="plan-card h-100">
+                <div class="plan-overlay">
+                    <span class="badge bg-primary">{{ plan.days }} Days</span>
+                    <span class="badge bg-success">{{ plan.people }} People</span>
+                </div>
+                <div class="plan-content p-4">
+                    <h3 class="h5 mb-3">{{ plan.destination }}</h3>
+                    <div class="plan-details mb-3">
+                        <div class="detail-item">
+                            <i class="bi bi-house text-primary"></i>
+                            <span>{{ plan.accommodation }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="bi bi-compass text-primary"></i>
+                            <span>{{ plan.activities }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="bi bi-wallet2 text-primary"></i>
+                            <span>{{ plan.budget }}</span>
+                        </div>
+                    </div>
+                    <div class="plan-tags mb-4">
+                        {% for interest in plan.interests.split(',') %}
+                        <span class="plan-tag">{{ interest.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="plan-footer">
+                        <small class="text-muted">Created {{ plan.created_at.strftime('%B %d, %Y') if plan.created_at else 'Recently' }}</small>
+                        <a href="{{ url_for('generate_plan') }}?plan_id={{ plan.id }}" class="btn btn-outline-primary">
+                            View Plan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not plans %}
+    <div class="text-center py-5">
+        <div class="empty-state">
+            <i class="bi bi-journal-text display-1 text-muted mb-4"></i>
+            <h3>No Travel Plans Yet</h3>
+            <p class="text-muted mb-4">Start creating your first travel plan!</p>
+            <a href="{{ url_for('planner') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>Create New Plan
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not prev_page %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('list_plans', page=prev_page) if prev_page else '#' }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% for page_num in range(1, total_pages + 1) %}
+            <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('list_plans', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not next_page %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('list_plans', page=next_page) if next_page else '#' }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+    --primary-color: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-light: #818CF8;
+    --transition: all 0.3s ease;
+}
+
+/* Hero Section */
+.plans-hero {
+    background: var(--primary-gradient);
+    min-height: 40vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/featured/?travel') center/cover;
+    opacity: 0.2;
+}
+
+/* Plan Cards */
+.plan-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+}
+
+.plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.plan-card:hover {
+    transform: scale(1.1);
+}
+
+.plan-overlay {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.plan-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.plan-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.plan-tag {
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    transition: var(--transition);
+}
+
+.plan-tag:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.plan-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .plans-hero {
+        min-height: 30vh;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add fade-in animation to plan cards
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    document.querySelectorAll('.plan-card').forEach(card => {
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %}

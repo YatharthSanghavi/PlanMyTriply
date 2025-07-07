@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero position-relative overflow-hidden">
+    <!-- Background with overlay for better text contrast -->
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+
+    <div class="container">
+        <div class="row align-items-center min-vh-100 py-5">
+        <!-- Content Column - fully responsive with improved spacing -->
+        <div class="col-lg-6 col-md-12 py-4 py-lg-5 order-2 order-lg-1">
+            <div class="hero-content position-relative z-1">
+            <span class="badge bg-white text-primary px-3 px-md-4 py-2 mb-3 mb-md-4 fs-6 rounded-pill">AI-Powered Travel Planning</span>
+            <h1 class="display-4 display-md-3 fw-bold text-white mb-3 mb-md-4">
+                Your Dream Journey,<br class="d-none d-sm-block">
+                Planned by AI
+            </h1>
+            <p class="lead text-white-75 mb-4 mb-md-5 pe-md-5">
+                Experience the future of travel planning with our advanced AI that creates personalized itineraries tailored just for you.
+            </p>
+            <div class="d-flex flex-column flex-sm-row gap-3">
+                <a href="{{ url_for('planner') }}" class="btn btn-light btn-lg fw-medium">
+                <i class="bi bi-calendar-plus me-2"></i>
+                Start Planning
+                </a>
+                <a href="#how-it-works" class="btn btn-outline-light btn-lg fw-medium">
+                <i class="bi bi-play-circle me-2"></i>
+                How It Works
+                </a>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="badge bg-primary-subtle text-primary px-4 py-2 mb-3">Why Choose Us</span>
+      <h2 class="display-5 fw-bold mb-4">Smart Travel Planning</h2>
+      <p class="lead text-muted mx-auto" style="max-width: 600px;">
+        Our AI-powered platform makes travel planning effortless and personalized.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon bg-primary-subtle text-primary">
+            <i class="bi bi-magic"></i>
+          </div>
+          <h3>AI-Powered Planning</h3>
+          <p>Our advanced AI creates personalized itineraries based on your preferences and travel style.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon bg-success-subtle text-success">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <h3>Save Time</h3>
+          <p>Get a complete travel plan in minutes instead of spending hours on research.</p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon bg-info-subtle text-info">
+            <i class="bi bi-geo-alt"></i>
+          </div>
+          <h3>Local Insights</h3>
+          <p>Discover hidden gems and local favorites that most tourists miss.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section id="how-it-works" class="how-it-works py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="badge bg-primary-subtle text-primary px-4 py-2 mb-3">Process</span>
+      <h2 class="display-5 fw-bold mb-4">How It Works</h2>
+      <p class="lead text-muted mx-auto" style="max-width: 600px;">
+        Create your perfect travel plan in three simple steps.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-icon bg-primary-subtle">
+            <i class="bi bi-person-lines-fill text-primary"></i>
+          </div>
+          <h4>Share Your Preferences</h4>
+          <p>Tell us about your travel style, interests, and what you're looking for in your trip.</p>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-icon bg-success-subtle">
+            <i class="bi bi-cpu text-success"></i>
+          </div>
+          <h4>AI Creates Your Plan</h4>
+          <p>Our AI analyzes thousands of options to create your perfect itinerary.</p>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-icon bg-info-subtle">
+            <i class="bi bi-airplane text-info"></i>
+          </div>
+          <h4>Start Your Adventure</h4>
+          <p>Get a detailed day-by-day itinerary with all the information you need.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="badge bg-primary-subtle text-primary px-4 py-2 mb-3">Reviews</span>
+      <h2 class="display-5 fw-bold mb-4">What Travelers Say</h2>
+      <p class="lead text-muted mx-auto" style="max-width: 600px;">
+        Read about the experiences of travelers who used our AI planner.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="testimonial-card">
+          <div class="testimonial-rating text-warning mb-3">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+          </div>
+          <p class="testimonial-text">
+            "The AI created the perfect itinerary for our family trip to Japan. We discovered amazing places we wouldn't have found otherwise!"
+          </p>
+          <div class="testimonial-author">
+            <div>
+              <h6>Sarah Johnson</h6>
+              <small class="text-muted">Family Traveler</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="testimonial-card">
+          <div class="testimonial-rating text-warning mb-3">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+          </div>
+          <p class="testimonial-text">
+            "Saved me hours of planning. The recommendations were spot-on and helped me explore Paris like a local."
+          </p>
+          <div class="testimonial-author">
+            <div>
+              <h6>Michael Chen</h6>
+              <small class="text-muted">Solo Traveler</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="testimonial-card">
+          <div class="testimonial-rating text-warning mb-3">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+          </div>
+          <p class="testimonial-text">
+            "The best travel planning tool I've ever used. It understood exactly what we wanted and created the perfect romantic getaway."
+          </p>
+          <div class="testimonial-author">
+            <div>
+              <h6>Emma Rodriguez</h6>
+              <small class="text-muted">Couple Traveler</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Hero Section */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  }
+
+  .hero-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('https://source.unsplash.com/random/1920x1080/?travel') center/cover;
+    opacity: 0.2;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .hero-image {
+    position: relative;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .floating-card {
+    position: absolute;
+    background: white;
+    padding: 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .floating-card.top {
+    top: 10%;
+    left: -10%;
+    animation-delay: 1s;
+  }
+
+  .floating-card.bottom {
+    bottom: 10%;
+    right: -10%;
+    animation-delay: 2s;
+  }
+
+  /* Feature Cards */
+  .feature-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+  }
+
+  .feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+
+  .feature-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1.5rem;
+  }
+
+  /* Step Cards */
+  .step-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .step-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+
+  .step-number {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  .step-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 1rem auto;
+  }
+
+  /* Destination Cards */
+  .destination-card {
+    border-radius: 1rem;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .destination-card:hover {
+    transform: translateY(-10px);
+  }
+
+  .destination-image {
+    position: relative;
+    padding-top: 75%;
+  }
+
+  .destination-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+  }
+
+  .destination-overlay
+  .destination-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: white;
+    transform: translateY(100%);
+    transition: all 0.3s ease;
+  }
+
+  .destination-card:hover .destination-overlay {
+    transform: translateY(0);
+  }
+
+  .destination-card:hover img {
+    transform: scale(1.1);
+  }
+
+  /* Testimonial Cards */
+  .testimonial-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .testimonial-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+
+  .testimonial-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 1rem;
+    object-fit: cover;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* CTA Section */
+  .cta-card {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .cta-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('https://source.unsplash.com/random/1920x1080/?adventure') center/cover;
+    opacity: 0.1;
+  }
+
+  /* Animations */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .hero {
+      text-align: center;
+    }
+
+    .floating-card {
+      display: none;
+    }
+
+    .feature-card,
+    .step-card,
+    .destination-card,
+    .testimonial-card {
+      margin-bottom: 2rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Intersection Observer for animations
+  const observerOptions = {
+    threshold: 0.2,
+    rootMargin: '0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('fade-in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Observe elements for animation
+  document.querySelectorAll('.feature-card, .step-card, .destination-card, .testimonial-card').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Parallax effect for hero section
+  window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset;
+    const heroBg = document.querySelector('.hero-bg');
+    if (heroBg) {
+      heroBg.style.transform = `translateY(${scrolled * 0.5}px)`;
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %} - Create Travel Guide{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg">
+                <div class="card-header bg-gradient p-4">
+                    <h1 class="h3 mb-0 text-black">Create New Travel Guide</h1>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation" novalidate>
+                        <!-- Title -->
+                        <div class="mb-4">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control form-control-lg" 
+                                   id="title" name="title" required>
+                        </div>
+
+                        <!-- Author Name -->
+                        <div class="mb-4">
+                            <label for="author" class="form-label">Your Name</label>
+                            <input type="text" class="form-control form-control-lg" 
+                                   id="author" name="author" required>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-4">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select form-select-lg" id="category" name="category" required>
+                                <option value="">Select a category</option>
+                                <option value="Destinations">Destinations</option>
+                                <option value="Tips & Advice">Tips & Advice</option>
+                                <option value="Budget Travel">Budget Travel</option>
+                                <option value="Adventure">Adventure</option>
+                                <option value="Culture">Culture</option>
+                                <option value="Food & Dining">Food & Dining</option>
+                            </select>
+                        </div>
+
+                        <!-- Icon -->
+                        <div class="mb-4">
+                            <label for="icon" class="form-label">Icon</label>
+                            <select class="form-select form-select-lg" id="icon" name="icon">
+                                <option value="compass">Compass</option>
+                                <option value="map">Map</option>
+                                <option value="globe">Globe</option>
+                                <option value="airplane">Airplane</option>
+                                <option value="camera">Camera</option>
+                                <option value="cup-hot">Food & Drink</option>
+                                <option value="people">Culture</option>
+                                <option value="wallet2">Budget</option>
+                            </select>
+                        </div>
+
+                        <!-- Background Color -->
+                        <div class="mb-4">
+                            <label for="default_bg_color" class="form-label">Background Color</label>
+                            <input type="color" class="form-control form-control-lg" 
+                                   id="default_bg_color" name="default_bg_color" 
+                                   value="#4F46E5">
+                        </div>
+
+                        <!-- Excerpt -->
+                        <div class="mb-4">
+                            <label for="excerpt" class="form-label">Excerpt</label>
+                            <textarea class="form-control" id="excerpt" name="excerpt" 
+                                      rows="3" required></textarea>
+                            <div class="form-text">A brief summary of your guide (max 200 characters)</div>
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="mb-4">
+                            <label for="tags" class="form-label">Tags</label>
+                            <input type="text" class="form-control form-control-lg" 
+                                   id="tags" name="tags">
+                            <div class="form-text">Separate tags with commas (e.g., hiking, nature, adventure)</div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="mb-4">
+                            <label for="content" class="form-label">Content</label>
+                            <div id="contentSections">
+                                <div class="content-section mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <input type="text" class="form-control section-title" 
+                                               placeholder="Section Title (e.g., Getting There, Where to Stay)"
+                                               onchange="updateContent()">
+                                        <button type="button" class="btn btn-outline-danger ms-2 remove-section">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    <textarea class="form-control content-textarea" 
+                                              rows="5" 
+                                              placeholder="Enter points for this section (press Enter for new points)"
+                                              onchange="updateContent()"></textarea>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" onclick="addSection()">
+                                <i class="bi bi-plus-circle me-2"></i>Add New Section
+                            </button>
+                            <textarea id="finalContent" name="content" hidden></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg py-3">
+                                <i class="bi bi-check-circle me-2"></i>Publish Guide
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    border-radius: 1rem;
+}
+
+.form-control, .form-select {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
+}
+
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Color picker styling */
+input[type="color"] {
+    height: 3rem;
+    padding: 0.25rem;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.25rem;
+}
+
+/* Content Section Styling */
+.content-section {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+.section-title {
+    font-weight: 600;
+}
+
+.content-textarea {
+    font-family: monospace;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.preview-card {
+    background: #4F46E5;
+    color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.preview-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+});
+
+function initializeForm() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        updateContent();
+        form.classList.add('was-validated');
+    });
+
+    // Preview card update
+    const bgColorInput = document.getElementById('default_bg_color');
+    const iconSelect = document.getElementById('icon');
+    const previewCard = document.createElement('div');
+    previewCard.className = 'preview-card mt-4';
+    
+    function updatePreview() {
+        previewCard.style.background = bgColorInput.value;
+        previewCard.innerHTML = `
+            <div class="preview-icon">
+                <i class="bi bi-${iconSelect.value}"></i>
+            </div>
+            <div class="preview-text">Preview of your guide's appearance</div>
+        `;
+    }
+
+    bgColorInput.after(previewCard);
+    updatePreview();
+
+    bgColorInput.addEventListener('input', updatePreview);
+    iconSelect.addEventListener('change', updatePreview);
+
+    // Event delegation for remove section buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-section')) {
+            const section = e.target.closest('.content-section');
+            if (document.querySelectorAll('.content-section').length > 1) {
+                section.remove();
+                updateContent();
+            }
+        }
+    });
+}
+
+function addSection() {
+    const section = document.createElement('div');
+    section.className = 'content-section mb-4';
+    section.innerHTML = `
+        <div class="d-flex align-items-center mb-3">
+            <input type="text" class="form-control section-title" 
+                   placeholder="Section Title (e.g., Getting There, Where to Stay)"
+                   onchange="updateContent()">
+            <button type="button" class="btn btn-outline-danger ms-2 remove-section">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <textarea class="form-control content-textarea" 
+                  rows="5" 
+                  placeholder="Enter points for this section (press Enter for new points)"
+                  onchange="updateContent()"></textarea>
+    `;
+    document.getElementById('contentSections').appendChild(section);
+}
+
+function updateContent() {
+    const sections = document.querySelectorAll('.content-section');
+    let finalContent = '';
+
+    sections.forEach((section, index) => {
+        const title = section.querySelector('.section-title').value.trim();
+        const content = section.querySelector('.content-textarea').value.trim();
+
+        if (title) {
+            finalContent += `# ${title}\n\n`;
+        }
+        if (content) {
+            finalContent += `${content}\n\n`;
+        }
+    });
+
+    document.getElementById('finalContent').value = finalContent.trim();
+}
+</script>
+{% endblock %}

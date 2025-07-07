@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %} - Frequently Asked Questions{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="faq-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white text-primary px-4 py-2 mb-3">Help Center</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Frequently Asked Questions
+                </h1>
+                <p class="lead text-white mb-0">
+                    Find answers to common questions about our AI travel planning service
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-8 mx-auto">
+            <!-- Search Bar -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-0" id="faqSearch" 
+                               placeholder="Search frequently asked questions...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Categories -->
+            <div class="faq-categories mb-4">
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary active" data-category="all">All Questions</button>
+                    <button class="btn btn-outline-primary" data-category="general">General</button>
+                    <button class="btn btn-outline-primary" data-category="planning">Trip Planning</button>
+                    <button class="btn btn-outline-primary" data-category="ai">AI Technology</button>
+                    <button class="btn btn-outline-primary" data-category="account">Account & Billing</button>
+                </div>
+            </div>
+
+            <!-- FAQ Accordion -->
+            <div class="accordion shadow-sm" id="faqAccordion">
+                <!-- General Questions -->
+                <div class="accordion-item" data-category="general">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            What is PlanMyTriply AI?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            PlanMyTriply AI is an advanced travel planning platform that uses artificial intelligence to create personalized travel itineraries based on your preferences, interests, and travel style.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trip Planning Questions -->
+                <div class="accordion-item" data-category="planning">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            How detailed are the travel plans?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Our travel plans include day-by-day itineraries with specific recommendations for accommodations, activities, restaurants, and transportation. Each plan is customized based on your preferences and includes local insights and tips.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Technology Questions -->
+                <div class="accordion-item" data-category="ai">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            How does the AI create travel plans?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Our AI analyzes millions of data points, including travel trends, user reviews, local expertise, and seasonal factors to create optimized itineraries. It considers your specific preferences, budget, and travel style to provide personalized recommendations.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account & Billing Questions -->
+                <div class="accordion-item" data-category="account">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                            Is the service free to use?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Yes, Our service is fully Free no Hidden charges.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.faq-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 40vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?travel-map') center/cover;
+    opacity: 0.2;
+}
+
+.card {
+    border: none;
+    border-radius: 1rem;
+}
+
+.accordion-item {
+    border: none;
+    background: transparent;
+}
+
+.accordion-item:not(:last-child) {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.accordion-button {
+    padding: 1.5rem;
+    font-weight: 500;
+    background: white;
+}
+
+.accordion-button:not(.collapsed) {
+    color: #4F46E5;
+    background: white;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0,0,0,0.1);
+}
+
+.accordion-button::after {
+    background-size: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.faq-categories .btn {
+    border-radius: 2rem;
+    padding: 0.5rem 1.5rem;
+}
+
+.faq-categories .btn.active {
+    background: #4F46E5;
+    color: white;
+}
+
+#faqSearch:focus {
+    box-shadow: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('faqSearch');
+    const categoryButtons = document.querySelectorAll('.faq-categories button');
+    const faqItems = document.querySelectorAll('.accordion-item');
+
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        faqItems.forEach(item => {
+            const question = item.querySelector('.accordion-button').textContent.toLowerCase();
+            const answer = item.querySelector('.accordion-body').textContent.toLowerCase();
+            
+            if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Category filtering
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            categoryButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            const category = this.dataset.category;
+            
+            faqItems.forEach(item => {
+                if (category === 'all' || item.dataset.category === category) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

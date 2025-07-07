@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %} - Hotel Recommendations{% endblock %}
+
+{% block content %}
+<!-- Results Hero -->
+<section class="results-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-3">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('hotel_search') }}" class="btn btn-light">
+                                <i class="bi bi-arrow-left me-2"></i>New Search
+                            </a>
+                        </li>
+                    </ol>
+                </nav>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Hotels in {{ location }}
+                </h1>
+                <div class="d-flex flex-wrap gap-3 text-white">
+                    <div class="search-detail">
+                        <i class="bi bi-people me-2"></i>
+                        {{ guests }} guests
+                    </div>
+                    <div class="search-detail">
+                        <i class="bi bi-wallet2 me-2"></i>
+                        {{ budget }} budget
+                    </div>
+                    {% if preferences %}
+                    <div class="search-detail">
+                        <i class="bi bi-star me-2"></i>
+                        {{ preferences }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- AI Recommendations -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="recommendations markdown-content">
+                        {{ recommendations | safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-lg-top" style="top: 2rem;">
+                <!-- Search Details -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="mb-4">Search Details</h5>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="detail-item">
+                                <i class="bi bi-geo-alt text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block">Location</small>
+                                    <strong>{{ location }}</strong>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="bi bi-people text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block">Guests</small>
+                                    <strong>{{ guests }} guests</strong>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="bi bi-wallet2 text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block">Budget</small>
+                                    <strong>{{ budget }}</strong>
+                                </div>
+                            </div>
+                            {% if preferences %}
+                            <div class="detail-item">
+                                <i class="bi bi-star text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block">Preferences</small>
+                                    <strong>{{ preferences }}</strong>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                {% if search_results %}
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <h5 class="mb-4">External Sources</h5>
+                        <div class="d-flex flex-column gap-3">
+                            {% for result in search_results %}
+                            <a href="{{ result.url }}" target="_blank" class="search-result-link">
+                                <div class="search-result">
+                                    <h6 class="mb-2">{{ result.title }}</h6>
+                                    <p class="small text-muted mb-0">{{ result.snippet }}</p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.results-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 40vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?{{ location }}-hotel') center/cover;
+    opacity: 0.2;
+}
+
+.search-detail {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.9rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.detail-item i {
+    font-size: 1.25rem;
+}
+
+.markdown-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+    color: #4F46E5;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.markdown-content ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.markdown-content li {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.markdown-content li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #4F46E5;
+}
+
+.search-result-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.search-result {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.search-result:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+@media (max-width: 768px) {
+    .results-hero {
+        min-height: 30vh;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,858 @@
+{% extends "base.html" %}
+{% block title %} - Your Travel Plan{% endblock %}
+{% block content %}
+
+<!-- Hero Banner with Parallax Effect -->
+<div class="plan-hero parallax-hero">
+  <div class="container">
+    <div class="text-center">
+      <div class="hero-content">
+        <span class="badge bg-white text-primary mb-3 px-4 py-2">Your Custom Travel Plan</span>
+        <h1 class="display-4 fw-bold mb-3 text-white">
+          {{ params.days }}-Day Journey in {{ params.destination }}
+        </h1>
+        <p class="lead text-white mb-4">
+          A personalized adventure crafted just for you
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+          <button class="btn btn-light btn-lg" onclick="downloadPDF()">
+            <i class="bi bi-file-pdf me-2"></i>Save PDF
+          </button>
+          <button class="btn btn-light btn-lg" data-bs-toggle="modal" data-bs-target="#shareModal">
+            <i class="bi bi-share me-2"></i>Share
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-4">
+    <!-- Quick Navigation -->
+    <div class="col-12 mb-4 d-lg-none">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex gap-2 overflow-auto py-2 quick-nav">
+            <button class="btn btn-outline-primary" onclick="scrollToSection('overview')">
+              <i class="bi bi-info-circle me-2"></i>Overview
+            </button>
+            <button class="btn btn-outline-primary" onclick="scrollToSection('itinerary')">
+              <i class="bi bi-calendar-event me-2"></i>Itinerary
+            </button>
+            <button class="btn btn-outline-primary" onclick="scrollToSection('accommodations')">
+              <i class="bi bi-house me-2"></i>Stays
+            </button>
+            <button class="btn btn-outline-primary" onclick="scrollToSection('dining')">
+              <i class="bi bi-cup-hot me-2"></i>Dining
+            </button>
+            <button class="btn btn-outline-primary" onclick="scrollToSection('budget')">
+              <i class="bi bi-wallet2 me-2"></i>Budget
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="sticky-lg-top" style="top: 2rem; z-index: 1000">
+        <!-- Trip Overview Card -->
+        <div class="card shadow-sm mb-4 overview-card">
+          <div class="card-header bg-gradient p-4">
+            <h5 class="card-title mb-0 text-black d-flex align-items-center">
+              <i class="bi bi-journal-text me-2"></i>
+              Trip Overview
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex align-items-center p-3 overview-item">
+                <div class="icon-circle bg-primary-subtle me-3">
+                  <i class="bi bi-calendar-event text-primary"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Duration</small>
+                  <strong>{{ params.days }} days</strong>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center p-3 overview-item">
+                <div class="icon-circle bg-primary-subtle me-3">
+                  <i class="bi bi-people text-primary"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Travelers</small>
+                  <strong>{{ params.people }} people</strong>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center p-3 overview-item">
+                <div class="icon-circle bg-primary-subtle me-3">
+                  <i class="bi bi-house text-primary"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Accommodation</small>
+                  <strong>{{ params.accommodation }}</strong>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center p-3 overview-item">
+                <div class="icon-circle bg-primary-subtle me-3">
+                  <i class="bi bi-compass text-primary"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Activities</small>
+                  <strong>{{ params.activities }}</strong>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center p-3 overview-item">
+                <div class="icon-circle bg-primary-subtle me-3">
+                  <i class="bi bi-heart text-primary"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Interests</small>
+                  <strong>{{ params.interests }}</strong>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center p-3 overview-item">
+                <div class="icon-circle bg-primary-subtle me-3">
+                  <i class="bi bi-wallet2 text-primary"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Budget Level</small>
+                  <strong>{{ params.budget }}</strong>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-light p-4">
+            <div class="d-grid gap-3">
+              <a href="{{ url_for('planner') }}" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>New Plan
+              </a>
+              <form action="{{ url_for('regenerate_plan') }}" method="POST">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                  <i class="bi bi-arrow-clockwise me-2"></i>Regenerate
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sources Card with Enhanced Styling -->
+        {% if sources %}
+        <div class="card shadow-sm sources-card">
+          <div class="card-header bg-gradient p-4">
+            <h5 class="card-title mb-0 text-black d-flex align-items-center">
+              <i class="bi bi-link-45deg me-2"></i>
+              Sources & References
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="d-flex flex-column gap-3">
+              {% for source in sources %}
+              <a href="{{ source.url }}" target="_blank" class="source-link">
+                <div class="source-badge">
+                  <i class="bi bi-link-45deg me-2"></i>
+                  <div class="source-info">
+                    <span class="source-name">{{ source.name }}</span>
+                    <small class="source-url text-muted">{{ source.url | truncate(40) }}</small>
+                  </div>
+                  <i class="bi bi-box-arrow-up-right ms-auto"></i>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm content-card">
+        <div class="card-body p-4">
+          <!-- Progress Tracker -->
+          <div class="progress-tracker mb-4">
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-2">
+              <small class="text-muted">Start of Journey</small>
+              <small class="text-muted">Day {{ params.days }}</small>
+            </div>
+          </div>
+
+          <!-- Plan Content -->
+          <div class="plan-content markdown-content">
+            {{ plan | safe }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 p-4">
+        <h5 class="modal-title fw-bold">Share Your Journey</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 pb-4 pt-0">
+        <p class="text-muted mb-4">Choose how you'd like to share your experience</p>
+        <div class="share-options">
+          <div class="row g-4">
+            <div class="col-6">
+              <div class="share-card" onclick="shareViaEmail()">
+                <div class="share-icon-wrapper">
+                  <div class="share-icon bg-primary-subtle">
+                    <i class="bi bi-envelope-fill text-primary"></i>
+                  </div>
+                </div>
+                <span class="share-label">Email</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="share-card" onclick="shareViaWhatsApp()">
+                <div class="share-icon-wrapper">
+                  <div class="share-icon bg-success-subtle">
+                    <i class="bi bi-whatsapp text-success"></i>
+                  </div>
+                </div>
+                <span class="share-label">WhatsApp</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="share-card" onclick="copyToClipboard()">
+                <div class="share-icon-wrapper">
+                  <div class="share-icon bg-info-subtle">
+                    <i class="bi bi-link-45deg text-info"></i>
+                  </div>
+                </div>
+                <span class="share-label">Copy Link</span>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="share-card" onclick="downloadPDF()">
+                <div class="share-icon-wrapper">
+                  <div class="share-icon bg-danger-subtle">
+                    <i class="bi bi-file-pdf-fill text-danger"></i>
+                  </div>
+                </div>
+                <span class="share-label">Save PDF</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #4f46e5, #7c3aed);
+    --primary-color: #4f46e5;
+    --primary-dark: #4338ca;
+    --primary-light: #818cf8;
+    --transition-base: all 0.3s ease;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    --radius-sm: 0.5rem;
+    --radius: 1rem;
+    --radius-lg: 1.5rem;
+  }
+
+  /* Enhanced Hero Section */
+  .parallax-hero {
+    background: var(--primary-gradient),
+                url('https://source.unsplash.com/1600x900/?{{ params.destination }}') center/cover fixed;
+    padding: 8rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .parallax-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  /* Quick Navigation */
+  .quick-nav {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .quick-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .quick-nav .btn {
+    white-space: nowrap;
+    transition: var(--transition-base);
+  }
+
+  /* Enhanced Overview Card */
+  .overview-card {
+    border-radius: var(--radius);
+    transition: var(--transition-base);
+  }
+
+  .overview-item {
+    transition: var(--transition-base);
+  }
+
+  .overview-item:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
+  }
+
+  .icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-base);
+  }
+
+  .overview-item:hover .icon-circle {
+    transform: scale(1.1);
+  }
+
+  /* Enhanced Source Badge */
+  .source-link {
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition-base);
+  }
+
+  .source-badge {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-base);
+  }
+
+  .source-badge:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  .source-info {
+    flex: 1;
+    margin: 0 1rem;
+    overflow: hidden;
+  }
+
+  .source-name {
+    display: block;
+    font-weight: 500;
+  }
+
+  .source-url {
+    display: block;
+    font-size: 0.875rem;
+  }
+
+  /* Enhanced Content Card */
+  .content-card {
+    border-radius: var(--radius);
+    transition: var(--transition-base);
+  }
+
+  /* Progress Tracker */
+  .progress {
+    border-radius: var(--radius-lg);
+    background: #f0f0f0;
+  }
+
+  .progress-bar {
+    background: var(--primary-gradient);
+    border-radius: var(--radius-lg);
+    transition: width 1s ease-in-out;
+  }
+
+  /* Enhanced Markdown Content */
+  .markdown-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+
+  .markdown-content h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: var(--primary-gradient);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 2rem 0 1.5rem;
+  }
+
+  .markdown-content h2 {
+    font-size: 2rem;
+    color: var(--primary-dark);
+    border-bottom: 3px solid var(--primary-light);
+    padding-bottom: 0.5rem;
+    margin: 2rem 0 1.5rem;
+  }
+
+  .markdown-content h3 {
+    font-size: 1.5rem;
+    color: var(--primary-dark);
+    margin: 1.5rem 0 1rem;
+  }
+
+  .markdown-content ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .markdown-content ul li {
+    position: relative;
+    padding: 0.75rem 0 0.75rem 2rem;
+    margin: 0.5rem 0;
+    transition: var(--transition-base);
+  }
+
+  .markdown-content ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+    transition: var(--transition-base);
+  }
+
+  .markdown-content ul li:hover {
+    transform: translateX(5px);
+  }
+
+  .markdown-content ul li:hover::before {
+    transform: translateX(3px);
+  }
+
+  /* Day Sections */
+  .day-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 1px solid #e5e7eb;
+    transition: var(--transition-base);
+  }
+
+  .day-section:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Share Modal */
+  #shareModal .modal-content {
+    border-radius: 16px;
+    background-color: #ffffff;
+  }
+  
+  #shareModal .modal-title {
+    font-size: 1.25rem;
+    color: #333;
+  }
+  
+  .share-options .row {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+  
+  .share-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .share-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .share-icon-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+  
+  .share-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .share-icon i {
+    font-size: 1.5rem;
+  }
+  
+  .share-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .share-options {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .share-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition-base);
+  }
+
+  .share-option:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+  }
+
+  .share-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Print Styles */
+  @media print {
+    .plan-hero,
+    .quick-nav,
+    .btn,
+    .modal,
+    .toast-container {
+      display: none !important;
+    }
+
+    .card {
+      box-shadow: none !important;
+      border: 1px solid #e5e7eb !important;
+    }
+
+    .markdown-content {
+      font-size: 11pt;
+    }
+
+    .overview-item:hover {
+      transform: none;
+    }
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .share-icon {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .share-icon i {
+      font-size: 1.25rem;
+    }
+    
+    .share-label {
+      font-size: 0.8rem;
+    }
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .parallax-hero {
+      padding: 4rem 0;
+      background-attachment: scroll;
+    }
+
+    .sticky-lg-top {
+      position: relative !important;
+      top: 0 !important;
+    }
+
+    .markdown-content {
+      font-size: 1rem;
+    }
+
+    .share-options {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeUI();
+    updateProgressBar();
+    generateQRCode();
+});
+
+function initializeUI() {
+    // Initialize tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+
+    // Format markdown content
+    formatMarkdownContent();
+
+    // Add scroll animations
+    addScrollAnimations();
+}
+
+function formatMarkdownContent() {
+    const content = document.querySelector('.markdown-content');
+    if (!content) return;
+
+    // Add section IDs and enhance headings
+    const headings = content.querySelectorAll('h1, h2, h3');
+    headings.forEach((heading, index) => {
+      const id = heading.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      heading.id = id;
+
+      if (heading.tagName === 'H2') {
+        const icon = getHeadingIcon(heading.textContent);
+        heading.innerHTML = `<i class="bi ${icon} me-2"></i>${heading.textContent}`;
+      }
+    });
+
+    // Enhance lists
+    const lists = content.querySelectorAll('ul, ol');
+    lists.forEach(list => {
+      list.classList.add('enhanced-list');
+      
+      const items = list.querySelectorAll('li');
+      items.forEach(item => {
+        item.classList.add('enhanced-list-item');
+      });
+    });
+
+    // Add section wrappers
+    wrapSections();
+}
+
+function getHeadingIcon(text) {
+    const lowercase = text.toLowerCase();
+    if (lowercase.includes('day')) return 'bi-calendar-event';
+    if (lowercase.includes('overview')) return 'bi-info-circle';
+    if (lowercase.includes('before')) return 'bi-clipboard-check';
+    if (lowercase.includes('accommodation')) return 'bi-house';
+    if (lowercase.includes('dining')) return 'bi-cup-hot';
+    if (lowercase.includes('budget')) return 'bi-wallet2';
+    if (lowercase.includes('tips')) return 'bi-lightbulb';
+    return 'bi-bookmark';
+}
+
+function wrapSections() {
+    const content = document.querySelector('.markdown-content');
+    Array.from(content.querySelectorAll('h2')).forEach(heading => {
+      const section = document.createElement('div');
+      section.className = 'content-section p-4 mb-4 rounded-3';
+      
+      if (heading.textContent.toLowerCase().includes('day')) {
+        section.classList.add('day-section');
+      } else {
+        section.classList.add('info-section');
+      }
+
+      heading.parentNode.insertBefore(section, heading);
+      
+      let current = heading;
+      while (current && current.nextElementSibling && current.nextElementSibling.tagName !== 'H2') {
+        const next = current.nextElementSibling;
+        section.appendChild(current);
+        current = next;
+      }
+      section.appendChild(current);
+    });
+}
+
+function updateProgressBar() {
+    const progress = document.querySelector('.progress-bar');
+    setTimeout(() => {
+      progress.style.width = '100%';
+    }, 500);
+}
+
+function addScrollAnimations() {
+    const sections = document.querySelectorAll('.content-section');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fade-in');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    sections.forEach(section => observer.observe(section));
+}
+
+function scrollToSection(id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function generateQRCode() {
+    const qrcodeContainer = document.getElementById('qrcode');
+    if (qrcodeContainer) {
+        qrcodeContainer.innerHTML = '';
+        new QRCode(qrcodeContainer, {
+            text: window.location.href,
+            width: 128,
+            height: 128,
+            colorDark: '#4F46E5',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+}
+
+function shareViaEmail() {
+    const subject = encodeURIComponent(`Travel Plan for {{ params.destination }}`);
+    const body = encodeURIComponent(`Check out my {{ params.days }}-day travel plan for {{ params.destination }}!\n\n${window.location.href}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+function shareViaWhatsApp() {
+    const text = encodeURIComponent(`Check out my {{ params.days }}-day travel plan for {{ params.destination }}!\n\n${window.location.href}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+function copyToClipboard() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('Link copied to clipboard!', 'success');
+    }).catch(() => {
+        showToast('Failed to copy link', 'error');
+    });
+}
+
+function downloadPDF() {
+    // Show loading indicator
+    showToast('Generating PDF...', 'info');
+    
+    const content = document.querySelector('.markdown-content');
+    const opt = {
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `Travel_Plan_${encodeURIComponent("{{ params.destination }}")}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2,
+            useCORS: true,
+            logging: false
+        },
+        jsPDF: { 
+            unit: 'in', 
+            format: 'a4', 
+            orientation: 'portrait'
+        },
+        pagebreak: { mode: 'avoid-all' }
+    };
+
+    // Create a clone of the content to modify for PDF
+    const pdfContent = content.cloneNode(true);
+    
+    // Add PDF-specific styling
+    pdfContent.style.padding = '20px';
+    pdfContent.style.fontSize = '12pt';
+    
+    // Generate PDF
+    html2pdf().set(opt).from(pdfContent).save().then(() => {
+        showToast('PDF downloaded successfully!', 'success');
+    }).catch(err => {
+        console.error('PDF generation failed:', err);
+        showToast('Failed to generate PDF. Please try again.', 'error');
+    });
+}
+
+function showToast(message, type = 'success') {
+    const toastHtml = `
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-${type === 'success' ? 'check-circle-fill text-success' : 
+                               type === 'error' ? 'x-circle-fill text-danger' : 
+                               'info-circle-fill text-info'} me-2"></i>
+                <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+
+    const toastContainer = document.querySelector('.toast-container');
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+    const toastElement = toastContainer.lastElementChild;
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 3000
+    });
+    toast.show();
+
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %}

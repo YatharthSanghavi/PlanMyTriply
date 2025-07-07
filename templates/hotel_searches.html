@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %} - Hotel Search History{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="searches-hero position-relative overflow-hidden">
+    <div class="hero-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-white text-primary px-4 py-2 mb-3">Search History</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Previous Hotel Searches
+                </h1>
+                <p class="lead text-white mb-4">
+                    Browse through your past hotel searches and recommendations
+                </p>
+                <a href="{{ url_for('hotel_search') }}" class="btn btn-light btn-lg">
+                    <i class="bi bi-search me-2"></i>New Search
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row g-4">
+        {% for search in searches %}
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="h5 mb-0">{{ search.location }}</h3>
+                        <span class="badge bg-primary">{{ search.budget }}</span>
+                    </div>
+                    
+                    <div class="search-details mb-4">
+                        <div class="detail-item">
+                            <i class="bi bi-calendar-check text-primary"></i>
+                            <span>{{ search.check_in }} - {{ search.check_out }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <i class="bi bi-people text-primary"></i>
+                            <span>{{ search.guests }} guests</span>
+                        </div>
+                        {% if search.preferences %}
+                        <div class="detail-item">
+                            <i class="bi bi-star text-primary"></i>
+                            <span>{{ search.preferences }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="search-date text-muted small mb-4">
+                        Searched on {{ search.created_at.strftime('%B %d, %Y') if search.created_at else 'Unknown date' }}
+                    </div>
+
+                    <div class="d-grid">
+                        <a href="{{ url_for('view_hotel_search', search_id=search.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye me-2"></i>View Recommendations
+                        </a>
+                    </div>
+                </div>
+
+                <div class="collapse" id="recommendations-{{ search.id }}">
+                    <div class="card-footer bg-light p-4">
+                        <div class="recommendations markdown-content">
+                            {{ search.recommendations | safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not searches %}
+        <div class="col-12 text-center py-5">
+            <div class="empty-state">
+                <i class="bi bi-search display-1 text-muted mb-4"></i>
+                <h3>No Search History</h3>
+                <p class="text-muted mb-4">Start searching for hotels to see your history here!</p>
+                <a href="{{ url_for('hotel_search') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-search me-2"></i>Search Hotels
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not prev_page %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('hotel_searches', page=prev_page) if prev_page else '#' }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% for page_num in range(1, total_pages + 1) %}
+            <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('hotel_searches', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not next_page %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('hotel_searches', page=next_page) if next_page else '#' }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.searches-hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    min-height: 40vh;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/random/1920x1080/?hotel-lobby') center/cover;
+    opacity: 0.2;
+}
+
+.search-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.detail-item i {
+    font-size: 1.1rem;
+}
+
+.recommendations {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.card {
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.empty-state {
+    padding: 4rem 2rem;
+}
+
+@media (max-width: 768px) {
+    .searches-hero {
+        min-height: 30vh;
+    }
+}
+</style>
+{% endblock %}

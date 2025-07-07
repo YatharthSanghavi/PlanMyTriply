@@ -1,0 +1,9 @@
+Flask
+python-dotenv
+requests
+google-generativeai
+tavily-python
+Markdown
+supabase
+python-dotenv 
+psycopg2

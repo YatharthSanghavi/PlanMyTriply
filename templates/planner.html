@@ -1,0 +1,613 @@
+{% extends "base.html" %}
+
+{% block title %} - Create Your Travel Plan{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="planner-hero position-relative overflow-hidden">
+    <div class="container position-relative z-1">
+        <div class="row min-vh-50 align-items-center py-5">
+            <div class="col-lg-8 mx-auto text-center">
+                <span class="badge bg-primary px-4 py-2 mb-3">AI Travel Planner</span>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Craft Your Perfect Journey
+                </h1>
+                <p class="lead text-white mb-0">
+                    Let our AI create a personalized travel itinerary tailored just for you
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container position-relative" style="margin-top: -3rem;">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Planner Form Card -->
+            <div class="card shadow-lg border-0 rounded-4 mb-5">
+                <div class="card-header bg-gradient p-4 rounded-top-4">
+                    <div class="d-flex align-items-center">
+                        <div class="feature-icon bg-white rounded-circle p-3 me-3">
+                            <i class="bi bi-magic fs-4 text-primary"></i>
+                        </div>
+                        <div>
+                            <h2 class="card-title h3 mb-1">Your Travel Preferences</h2>
+                            <p class="text-muted mb-0">Fill in your preferences and let AI do the magic</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    {% if error %}
+                    <div class="alert alert-danger d-flex align-items-center rounded-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <div>{{ error }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for('generate_plan') }}" id="plannerForm" class="needs-validation" novalidate>
+                        <!-- Destination with Autocomplete -->
+                        <div class="form-group mb-4">
+                            <label class="form-label h6" for="destination">
+                                <i class="bi bi-geo-alt text-primary me-2"></i>Where would you like to go?
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0 ps-0" 
+                                       id="destination" 
+                                       name="destination" 
+                                       placeholder="e.g., Tokyo, Paris, New York"
+                                       required>
+                            </div>
+                            <div class="form-text">Enter a city, country, or region</div>
+                        </div>
+
+                        <div class="row g-4">
+                            <!-- Duration -->
+                            <div class="col-md-6">
+                                <label class="form-label h6" for="days">
+                                    <i class="bi bi-calendar text-primary me-2"></i>Duration
+                                </label>
+                                <select class="form-select form-select-lg" id="days" name="days">
+                                    {% for i in range(1, 15) %}
+                                    <option value="{{ i }}" {% if i == 3 %}selected{% endif %}>
+                                        {{ i }} day{% if i != 1 %}s{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                    <option value="15+">15+ days</option>
+                                </select>
+                            </div>
+
+                            <!-- Travelers -->
+                            <div class="col-md-6">
+                                <label class="form-label h6" for="people">
+                                    <i class="bi bi-people text-primary me-2"></i>Travelers
+                                </label>
+                                <select class="form-select form-select-lg" id="people" name="people">
+                                    <option value="1">Solo traveler</option>
+                                    <option value="2" selected>2 people</option>
+                                    {% for i in range(3, 11) %}
+                                    <option value="{{ i }}">{{ i }} people</option>
+                                    {% endfor %}
+                                    <option value="10+">10+ people</option>
+                                </select>
+                            </div>
+
+                            <!-- Budget -->
+                            <div class="col-md-6">
+                                <label class="form-label h6" for="budget">
+                                    <i class="bi bi-wallet2 text-primary me-2"></i>Budget Level
+                                </label>
+                                <div class="budget-selector">
+                                    <select class="form-select form-select-lg" id="budget" name="budget">
+                                        <option value="budget">Budget-friendly</option>
+                                        <option value="medium" selected>Moderate</option>
+                                        <option value="luxury">Luxury</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Accommodation -->
+                            <div class="col-md-6">
+                                <label class="form-label h6" for="accommodation">
+                                    <i class="bi bi-house text-primary me-2"></i>Accommodation
+                                </label>
+                                <select class="form-select form-select-lg" id="accommodation" name="accommodation">
+                                    <option value="hostel">Hostel</option>
+                                    <option value="budget-hotel">Budget Hotel</option>
+                                    <option value="mid-range" selected>Mid-range Hotel</option>
+                                    <option value="luxury">Luxury Hotel</option>
+                                    <option value="airbnb">Vacation Rental</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Activities with Enhanced UI -->
+                        <div class="form-group my-4">
+                            <label class="form-label h6" for="activities">
+                                <i class="bi bi-compass text-primary me-2"></i>Preferred Activities
+                            </label>
+                            <div class="activities-grid">
+                                <select class="form-select form-select-lg" id="activities" name="activities">
+                                    <option value="sightseeing" selected>Sightseeing & Landmarks</option>
+                                    <option value="adventure">Adventure & Outdoors</option>
+                                    <option value="relaxation">Relaxation & Wellness</option>
+                                    <option value="cultural">Cultural & Historical</option>
+                                    <option value="nightlife">Nightlife & Entertainment</option>
+                                    <option value="food-tours">Food & Culinary</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Interests with Tags -->
+                        <div class="form-group mb-4">
+                            <label class="form-label h6" for="interests">
+                                <i class="bi bi-heart text-primary me-2"></i>Specific Interests
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-tags"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0 ps-0" 
+                                       id="interests" 
+                                       name="interests"
+                                       placeholder="e.g., photography, hiking, museums"
+                                       value="culture, food">
+                            </div>
+                            <div class="form-text">Separate multiple interests with commas</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg py-3" id="submitBtn">
+                                <i class="bi bi-magic me-2"></i>Create My Travel Plan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-5">
+                <div class="loading-animation mb-4">
+                    <div class="spinner-grow text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <h4 class="mb-3">Creating Your Perfect Travel Plan</h4>
+                <p class="text-muted mb-4" id="loadingMessage">Analyzing your preferences...</p>
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
+    --primary-color: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-light: #818CF8;
+    --transition: all 0.3s ease;
+}
+
+/* Enhanced Hero Section */
+.planner-hero {
+    background: var(--primary-gradient);
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero-bg {
+    background: url('https://source.unsplash.com/featured/?travel') center/cover;
+    opacity: 0.2;
+}
+
+.text-white-75 {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* Enhanced Form Styling */
+.form-control, .form-select {
+    border: 1px solid #E5E7EB;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.input-group-text {
+    border-radius: 1rem 0 0 1rem;
+    border: 1px solid #E5E7EB;
+    padding: 0.75rem 1.25rem;
+}
+
+.input-group .form-control {
+    border-radius: 0 1rem 1rem 0;
+}
+
+.form-label {
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.form-text {
+    color: #6B7280;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+/* Enhanced Card Styling */
+.card {
+    transition: var(--transition);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.bg-gradient {
+    background: var(--primary-gradient);
+}
+
+/* Enhanced Destination Cards */
+.destination-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.destination-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.destination-img-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.destination-img {
+    height: 240px;
+    background-size: cover;
+    background-position: center;
+    transition: var(--transition);
+}
+
+.destination-card:hover .destination-img {
+    transform: scale(1.1);
+}
+
+.destination-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.destination-card:hover .destination-overlay {
+    opacity: 1;
+}
+
+.destination-content {
+    padding: 1.5rem;
+}
+
+.destination-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary-color);
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: var(--transition);
+}
+
+.destination-tag:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Enhanced Button Styling */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+}
+
+/* Feature Icon */
+.feature-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Activities Grid */
+.activities-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .planner-hero {
+        min-height: 40vh;
+    }
+
+    .destination-img {
+        height: 200px;
+    }
+
+    .activities-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .planner-hero {
+        min-height: auto;
+        padding: 2rem 0;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #E5E7EB !important;
+    }
+
+    .destination-card {
+        break-inside: avoid;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+    initializeAnimations();
+});
+
+function initializeForm() {
+    const form = document.getElementById('plannerForm');
+    const destinationInput = document.getElementById('destination');
+
+    // Enhanced form validation
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Show validation feedback
+            Array.from(form.elements).forEach(input => {
+                if (!input.validity.valid) {
+                    input.classList.add('is-invalid');
+                }
+            });
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Real-time validation feedback
+    form.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    });
+
+    // Enhanced input interactions
+    const formControls = document.querySelectorAll('.form-control, .form-select');
+    formControls.forEach(control => {
+        control.addEventListener('focus', function() {
+            this.closest('.form-group')?.classList.add('focused');
+        });
+
+        control.addEventListener('blur', function() {
+            this.closest('.form-group')?.classList.remove('focused');
+            validateInput(this);
+        });
+    });
+}
+
+function initializeAnimations() {
+    // Animate elements on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    document.querySelectorAll('.destination-card, .form-group').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+function validateInput(input) {
+    if (input.required && !input.value.trim()) {
+        input.classList.add('is-invalid');
+        return false;
+    }
+    input.classList.remove('is-invalid');
+    return true;
+}
+
+function setDestination(destination) {
+    const destinationInput = document.getElementById('destination');
+    destinationInput.value = destination;
+    
+    // Smooth scroll to form
+    document.querySelector('.card').scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+    });
+    
+    // Add highlight effect
+    destinationInput.classList.add('is-valid');
+    destinationInput.style.backgroundColor = "#f0f7ff";
+    setTimeout(() => {
+        destinationInput.style.backgroundColor = "";
+    }, 1500);
+
+    // Show success toast
+    showToast('Destination selected!', 'success');
+}
+
+function showToast(message, type = 'success') {
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+    toastContainer.style.zIndex = '1050';
+
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    toastContainer.appendChild(toast);
+    document.body.appendChild(toastContainer);
+
+    const bsToast = new bootstrap.Toast(toast, {
+        animation: true,
+        autohide: true,
+        delay: 3000
+    });
+
+    bsToast.show();
+
+    toast.addEventListener('hidden.bs.toast', () => {
+        toastContainer.remove();
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('plannerForm');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    const loadingMessages = [
+        'Analyzing your preferences...',
+        'Searching for the best experiences...',
+        'Going through multiple website for grathering best places...',
+        'Creating your personalized itinerary...',
+        'Adding local recommendations...',
+        'Finalizing your travel plan...'
+    ];
+    let progress = 0;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (form.checkValidity()) {
+            loadingModal.show();
+            startLoadingAnimation();
+            
+            // Submit the form after a short delay
+            setTimeout(() => {
+                form.submit();
+            }, 500);
+        }
+        
+        form.classList.add('was-validated');
+    });
+
+    function startLoadingAnimation() {
+        const progressBar = document.querySelector('.progress-bar');
+        const loadingMessageEl = document.getElementById('loadingMessage');
+        let messageIndex = 0;
+
+        const interval = setInterval(() => {
+            progress += 2;
+            progressBar.style.width = `${progress}%`;
+
+            if (progress % 20 === 0) {
+                messageIndex = (messageIndex + 1) % loadingMessages.length;
+                loadingMessageEl.textContent = loadingMessages[messageIndex];
+            }
+
+            if (progress >= 100) {
+                clearInterval(interval);
+            }
+        }, 100);
+    }
+});
+</script>
+{% endblock %}
