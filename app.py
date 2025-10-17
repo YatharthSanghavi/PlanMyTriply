@@ -1,35 +1,106 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file, make_response
 import google.generativeai as genai
 import requests
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from markupsafe import Markup
 import markdown
 from config import GEMINI_API_KEY, TAVILY_API_KEY, DEFAULT_TEMPERATURE, DEFAULT_MAX_OUTPUT_TOKENS
 from supabase import create_client, Client
 import traceback
+from functools import wraps
+import hashlib
+import logging
+from io import BytesIO
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # For session management
+app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))  # For session management
+
+# Simple in-memory cache (for production, use Redis or Memcached)
+cache = {}
 
 # Configure Supabase
-supabase: Client = create_client(
-    os.getenv("VITE_SUPABASE_URL"),
-    os.getenv("VITE_SUPABASE_ANON_KEY")
-)
+try:
+    supabase: Client = create_client(
+        os.getenv("VITE_SUPABASE_URL"),
+        os.getenv("VITE_SUPABASE_ANON_KEY")
+    )
+    logger.info("Supabase client initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Supabase client: {e}")
+    supabase = None
 
 # Configure Gemini API
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash-exp",
-    generation_config={
-        "temperature": DEFAULT_TEMPERATURE
-    }
-)
+try:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash-exp",
+        generation_config={
+            "temperature": DEFAULT_TEMPERATURE
+        }
+    )
+    logger.info("Gemini API configured successfully")
+except Exception as e:
+    logger.error(f"Failed to configure Gemini API: {e}")
+    model = None
 
 # Configure Markdown with extensions
 md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists', 'fenced_code', 'tables'])
+
+# Cache helper functions
+def get_cache_key(*args):
+    """Generate a cache key from arguments"""
+    key_string = "_".join(str(arg) for arg in args)
+    return hashlib.md5(key_string.encode()).hexdigest()
+
+def get_from_cache(key, max_age=3600):
+    """Get value from cache if not expired"""
+    if key in cache:
+        value, timestamp = cache[key]
+        if datetime.now() - timestamp < timedelta(seconds=max_age):
+            logger.info(f"Cache hit for key: {key}")
+            return value
+        else:
+            del cache[key]
+    return None
+
+def set_cache(key, value):
+    """Set value in cache with timestamp"""
+    cache[key] = (value, datetime.now())
+    logger.info(f"Cache set for key: {key}")
+
+# Security headers middleware
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+# Error handlers
+@app.errorhandler(404)
+def not_found(e):
+    logger.warning(f"404 error: {request.url}")
+    return render_template('index.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    logger.error(f"500 error: {str(e)}\n{traceback.format_exc()}")
+    return render_template('index.html'), 500
 
 # Fallback content in case API fails
 fallback_content = {
@@ -76,7 +147,13 @@ def format_markdown_content(content):
     return html_content
 
 def search_travel_info(query, destination):
-    """Enhanced Tavily API to search for travel information"""
+    """Enhanced Tavily API to search for travel information with caching"""
+    # Check cache first
+    cache_key = get_cache_key("travel_info", destination)
+    cached_result = get_from_cache(cache_key, max_age=86400)  # Cache for 24 hours
+    if cached_result:
+        return cached_result
+    
     url = "https://api.tavily.com/search"
     
     # Craft more specific search queries for better results
@@ -105,13 +182,13 @@ def search_travel_info(query, destination):
         }
         
         try:
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=10)
             response.raise_for_status()
             results = response.json()
             if results and "results" in results:
                 all_results.extend(results["results"])
         except requests.exceptions.RequestException as e:
-            print(f"Tavily API Error for query '{search_query}': {e}")
+            logger.error(f"Tavily API Error for query '{search_query}': {e}")
     
     # Deduplicate results based on URL
     unique_results = {}
@@ -119,10 +196,19 @@ def search_travel_info(query, destination):
         if result["url"] not in unique_results:
             unique_results[result["url"]] = result
     
-    return list(unique_results.values())
+    final_results = list(unique_results.values())
+    
+    # Cache the results
+    set_cache(cache_key, final_results)
+    
+    return final_results
 
 def save_travel_plan(travel_params, content, sources):
     """Save the travel plan to Supabase"""
+    if not supabase:
+        logger.error("Supabase client not initialized")
+        return None
+        
     try:
         data = {
             "destination": travel_params['destination'],
@@ -137,18 +223,23 @@ def save_travel_plan(travel_params, content, sources):
         }
         
         result = supabase.table('travel_plans').insert(data).execute()
+        logger.info(f"Travel plan saved successfully for {travel_params['destination']}")
         return result.data[0] if result.data else None
     except Exception as e:
-        print(f"Error saving travel plan to Supabase: {e}")
+        logger.error(f"Error saving travel plan to Supabase: {e}\n{traceback.format_exc()}")
         return None
 
 def get_travel_plan(plan_id):
     """Retrieve a travel plan from Supabase"""
+    if not supabase:
+        logger.error("Supabase client not initialized")
+        return None
+        
     try:
         result = supabase.table('travel_plans').select("*").eq('id', plan_id).execute()
         return result.data[0] if result.data else None
     except Exception as e:
-        print(f"Error retrieving travel plan: {e}")
+        logger.error(f"Error retrieving travel plan: {e}")
         return None
 
 def format_date(date_str):
@@ -716,6 +807,83 @@ def terms():
 @app.route('/faq')
 def faq():
     return render_template('faq.html')
+
+# API Endpoints for AJAX functionality
+@app.route('/api/validate-destination', methods=['POST'])
+def validate_destination():
+    """Validate if destination exists"""
+    try:
+        data = request.get_json()
+        destination = data.get('destination', '').strip()
+        
+        if not destination:
+            return jsonify({'valid': False, 'message': 'Destination is required'})
+        
+        if len(destination) < 2:
+            return jsonify({'valid': False, 'message': 'Destination name too short'})
+        
+        # Basic validation - could be enhanced with geocoding API
+        return jsonify({'valid': True, 'message': 'Destination looks good!'})
+    except Exception as e:
+        logger.error(f"Error validating destination: {e}")
+        return jsonify({'valid': False, 'message': 'Validation error'}), 500
+
+@app.route('/api/popular-destinations', methods=['GET'])
+def popular_destinations():
+    """Get popular destinations"""
+    try:
+        destinations = [
+            {'name': 'Paris, France', 'icon': '🗼', 'tags': ['Culture', 'Food', 'Romance']},
+            {'name': 'Tokyo, Japan', 'icon': '🗾', 'tags': ['Culture', 'Food', 'Technology']},
+            {'name': 'New York, USA', 'icon': '🗽', 'tags': ['City', 'Culture', 'Shopping']},
+            {'name': 'Bali, Indonesia', 'icon': '🏝️', 'tags': ['Beach', 'Nature', 'Relaxation']},
+            {'name': 'Rome, Italy', 'icon': '🏛️', 'tags': ['History', 'Culture', 'Food']},
+            {'name': 'London, UK', 'icon': '🏰', 'tags': ['Culture', 'History', 'Shopping']},
+            {'name': 'Dubai, UAE', 'icon': '🏙️', 'tags': ['Luxury', 'Shopping', 'Modern']},
+            {'name': 'Barcelona, Spain', 'icon': '🏖️', 'tags': ['Beach', 'Culture', 'Food']},
+        ]
+        return jsonify(destinations)
+    except Exception as e:
+        logger.error(f"Error fetching popular destinations: {e}")
+        return jsonify([]), 500
+
+@app.route('/api/plan/<plan_id>/share', methods=['GET'])
+def share_plan(plan_id):
+    """Generate shareable link for a plan"""
+    try:
+        plan = get_travel_plan(plan_id)
+        if not plan:
+            return jsonify({'error': 'Plan not found'}), 404
+        
+        share_url = url_for('generate_plan', plan_id=plan_id, _external=True)
+        return jsonify({
+            'url': share_url,
+            'title': f"Travel Plan for {plan['destination']}",
+            'description': f"{plan['days']} days trip for {plan['people']} people"
+        })
+    except Exception as e:
+        logger.error(f"Error generating share link: {e}")
+        return jsonify({'error': 'Failed to generate share link'}), 500
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get application statistics"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not available'}), 503
+            
+        plans_count = supabase.table('travel_plans').select('id', count='exact').execute()
+        guides_count = supabase.table('travel_guides').select('id', count='exact').execute()
+        hotels_count = supabase.table('hotel_searches').select('id', count='exact').execute()
+        
+        return jsonify({
+            'total_plans': plans_count.count if hasattr(plans_count, 'count') else 0,
+            'total_guides': guides_count.count if hasattr(guides_count, 'count') else 0,
+            'total_hotel_searches': hotels_count.count if hasattr(hotels_count, 'count') else 0,
+        })
+    except Exception as e:
+        logger.error(f"Error fetching stats: {e}")
+        return jsonify({'error': 'Failed to fetch stats'}), 500
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
