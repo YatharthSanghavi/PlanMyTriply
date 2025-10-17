@@ -576,7 +576,10 @@
 
   // Fetch and display stats
   fetch('/api/stats')
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      return response.json();
+    })
     .then(data => {
       // Animate numbers counting up
       Object.keys(data).forEach(key => {
@@ -588,12 +591,17 @@
     })
     .catch(error => {
       console.error('Error fetching stats:', error);
+      // Show fallback values or hide stats section gracefully
+      document.querySelectorAll('.stat-number').forEach(el => {
+        el.textContent = '--';
+      });
     });
 
   // Number animation function
   function animateNumber(element, start, end, duration) {
+    const FRAME_DURATION = 16; // milliseconds per frame for 60fps
     const range = end - start;
-    const increment = range / (duration / 16); // 60fps
+    const increment = range / (duration / FRAME_DURATION);
     let current = start;
     
     const timer = setInterval(() => {
@@ -604,7 +612,7 @@
       } else {
         element.textContent = Math.floor(current).toLocaleString();
       }
-    }, 16);
+    }, FRAME_DURATION);
   }
 </script>
 {% endblock %}
