@@ -170,6 +170,78 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Budget Calculator Card -->
+            <div class="card shadow-lg border-0 rounded-4 mt-4">
+                <div class="card-header bg-gradient p-4 rounded-top-4">
+                    <div class="d-flex align-items-center">
+                        <div class="feature-icon bg-white rounded-circle p-3 me-3">
+                            <i class="bi bi-calculator fs-4 text-primary"></i>
+                        </div>
+                        <div>
+                            <h2 class="card-title h3 mb-1">Budget Calculator</h2>
+                            <p class="text-muted mb-0">Estimate your trip expenses</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div id="budgetCalculator">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Days</label>
+                                <input type="number" class="form-control" id="calcDays" value="3" min="1">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Travelers</label>
+                                <input type="number" class="form-control" id="calcPeople" value="2" min="1">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Budget Level</label>
+                                <select class="form-select" id="calcBudget">
+                                    <option value="budget">Budget</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="luxury">Luxury</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mb-3" onclick="calculateBudget()">
+                            <i class="bi bi-calculator me-2"></i>Calculate Budget
+                        </button>
+                        <div id="budgetResults" class="d-none">
+                            <div class="alert alert-info">
+                                <h5 class="alert-heading mb-3">Estimated Budget</h5>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="text-muted small">Accommodation</div>
+                                        <div class="fw-bold" id="budgetAccommodation">$0</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted small">Food</div>
+                                        <div class="fw-bold" id="budgetFood">$0</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted small">Transportation</div>
+                                        <div class="fw-bold" id="budgetTransport">$0</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-muted small">Activities</div>
+                                        <div class="fw-bold" id="budgetActivities">$0</div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="h5 mb-0">Total Estimated Cost:</span>
+                                    <span class="h4 mb-0 text-primary" id="budgetTotal">$0</span>
+                                </div>
+                                <div class="text-muted small mt-2">
+                                    Per person: <span id="budgetPerPerson">$0</span> | 
+                                    Per day: <span id="budgetPerDay">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -462,6 +534,48 @@ function initializeForm() {
             }
         });
     });
+    
+    // Validate destination with API
+    let validationTimer;
+    destinationInput.addEventListener('input', function() {
+        clearTimeout(validationTimer);
+        const value = this.value.trim();
+        
+        if (value.length < 2) {
+            return;
+        }
+        
+        validationTimer = setTimeout(() => {
+            fetch('/api/validate-destination', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ destination: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    destinationInput.classList.add('is-valid');
+                    destinationInput.classList.remove('is-invalid');
+                } else {
+                    destinationInput.classList.add('is-invalid');
+                    destinationInput.classList.remove('is-valid');
+                    // Show error message
+                    let feedback = destinationInput.nextElementSibling;
+                    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                        feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        destinationInput.parentNode.appendChild(feedback);
+                    }
+                    feedback.textContent = data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Validation error:', error);
+            });
+        }, 500);
+    });
 
     // Enhanced input interactions
     const formControls = document.querySelectorAll('.form-control, .form-select');
@@ -609,5 +723,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
 });
+
+// Budget Calculator Function
+function calculateBudget() {
+    const days = parseInt(document.getElementById('calcDays').value);
+    const people = parseInt(document.getElementById('calcPeople').value);
+    const budget = document.getElementById('calcBudget').value;
+    const destination = document.getElementById('destination').value || 'Your destination';
+    
+    // Show loading state
+    const calcButton = event.target;
+    const originalText = calcButton.innerHTML;
+    calcButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculating...';
+    calcButton.disabled = true;
+    
+    fetch('/api/budget-calculator', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            destination: destination,
+            days: days,
+            people: people,
+            budget: budget
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Display results
+        document.getElementById('budgetAccommodation').textContent = `$${data.breakdown.accommodation.toFixed(0)}`;
+        document.getElementById('budgetFood').textContent = `$${data.breakdown.food.toFixed(0)}`;
+        document.getElementById('budgetTransport').textContent = `$${data.breakdown.transportation.toFixed(0)}`;
+        document.getElementById('budgetActivities').textContent = `$${data.breakdown.activities.toFixed(0)}`;
+        document.getElementById('budgetTotal').textContent = `$${data.total.toFixed(0)}`;
+        document.getElementById('budgetPerPerson').textContent = `$${data.per_person.toFixed(0)}`;
+        document.getElementById('budgetPerDay').textContent = `$${data.per_day.toFixed(0)}`;
+        
+        // Show results
+        document.getElementById('budgetResults').classList.remove('d-none');
+        
+        // Scroll to results
+        document.getElementById('budgetResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    })
+    .catch(error => {
+        console.error('Error calculating budget:', error);
+        showToast('Failed to calculate budget', 'error');
+    })
+    .finally(() => {
+        calcButton.innerHTML = originalText;
+        calcButton.disabled = false;
+    });
+}
 </script>
 {% endblock %}

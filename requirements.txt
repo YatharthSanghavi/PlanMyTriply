@@ -7,3 +7,6 @@ Markdown
 supabase
 python-dotenv 
 psycopg2
+reportlab
+pillow
+flask-compress

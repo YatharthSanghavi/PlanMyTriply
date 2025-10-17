@@ -1,35 +1,117 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file, make_response
+from flask_compress import Compress
 import google.generativeai as genai
 import requests
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from markupsafe import Markup
 import markdown
 from config import GEMINI_API_KEY, TAVILY_API_KEY, DEFAULT_TEMPERATURE, DEFAULT_MAX_OUTPUT_TOKENS
 from supabase import create_client, Client
 import traceback
+from functools import wraps
+import hashlib
+import logging
+from io import BytesIO
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.colors import HexColor
+import re
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # For session management
+app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))  # For session management
+
+# Enable compression for better performance
+Compress(app)
+
+# Simple in-memory cache (for production, use Redis or Memcached)
+cache = {}
 
 # Configure Supabase
-supabase: Client = create_client(
-    os.getenv("VITE_SUPABASE_URL"),
-    os.getenv("VITE_SUPABASE_ANON_KEY")
-)
+try:
+    supabase: Client = create_client(
+        os.getenv("VITE_SUPABASE_URL"),
+        os.getenv("VITE_SUPABASE_ANON_KEY")
+    )
+    logger.info("Supabase client initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Supabase client: {e}")
+    supabase = None
 
 # Configure Gemini API
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash-exp",
-    generation_config={
-        "temperature": DEFAULT_TEMPERATURE
-    }
-)
+try:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash-exp",
+        generation_config={
+            "temperature": DEFAULT_TEMPERATURE
+        }
+    )
+    logger.info("Gemini API configured successfully")
+except Exception as e:
+    logger.error(f"Failed to configure Gemini API: {e}")
+    model = None
 
 # Configure Markdown with extensions
 md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists', 'fenced_code', 'tables'])
+
+# Cache helper functions
+def get_cache_key(*args):
+    """Generate a cache key from arguments"""
+    key_string = "_".join(str(arg) for arg in args)
+    return hashlib.md5(key_string.encode()).hexdigest()
+
+def get_from_cache(key, max_age=3600):
+    """Get value from cache if not expired"""
+    if key in cache:
+        value, timestamp = cache[key]
+        if datetime.now() - timestamp < timedelta(seconds=max_age):
+            logger.info(f"Cache hit for key: {key}")
+            return value
+        else:
+            del cache[key]
+    return None
+
+def set_cache(key, value):
+    """Set value in cache with timestamp"""
+    cache[key] = (value, datetime.now())
+    logger.info(f"Cache set for key: {key}")
+
+# Security headers middleware
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+# Error handlers
+@app.errorhandler(404)
+def not_found(e):
+    logger.warning(f"404 error: {request.url}")
+    return render_template('index.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    logger.error(f"500 error: {str(e)}\n{traceback.format_exc()}")
+    return render_template('index.html'), 500
 
 # Fallback content in case API fails
 fallback_content = {
@@ -76,7 +158,13 @@ def format_markdown_content(content):
     return html_content
 
 def search_travel_info(query, destination):
-    """Enhanced Tavily API to search for travel information"""
+    """Enhanced Tavily API to search for travel information with caching"""
+    # Check cache first
+    cache_key = get_cache_key("travel_info", destination)
+    cached_result = get_from_cache(cache_key, max_age=86400)  # Cache for 24 hours
+    if cached_result:
+        return cached_result
+    
     url = "https://api.tavily.com/search"
     
     # Craft more specific search queries for better results
@@ -105,13 +193,13 @@ def search_travel_info(query, destination):
         }
         
         try:
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=10)
             response.raise_for_status()
             results = response.json()
             if results and "results" in results:
                 all_results.extend(results["results"])
         except requests.exceptions.RequestException as e:
-            print(f"Tavily API Error for query '{search_query}': {e}")
+            logger.error(f"Tavily API Error for query '{search_query}': {e}")
     
     # Deduplicate results based on URL
     unique_results = {}
@@ -119,10 +207,19 @@ def search_travel_info(query, destination):
         if result["url"] not in unique_results:
             unique_results[result["url"]] = result
     
-    return list(unique_results.values())
+    final_results = list(unique_results.values())
+    
+    # Cache the results
+    set_cache(cache_key, final_results)
+    
+    return final_results
 
 def save_travel_plan(travel_params, content, sources):
     """Save the travel plan to Supabase"""
+    if not supabase:
+        logger.error("Supabase client not initialized")
+        return None
+        
     try:
         data = {
             "destination": travel_params['destination'],
@@ -137,18 +234,23 @@ def save_travel_plan(travel_params, content, sources):
         }
         
         result = supabase.table('travel_plans').insert(data).execute()
+        logger.info(f"Travel plan saved successfully for {travel_params['destination']}")
         return result.data[0] if result.data else None
     except Exception as e:
-        print(f"Error saving travel plan to Supabase: {e}")
+        logger.error(f"Error saving travel plan to Supabase: {e}\n{traceback.format_exc()}")
         return None
 
 def get_travel_plan(plan_id):
     """Retrieve a travel plan from Supabase"""
+    if not supabase:
+        logger.error("Supabase client not initialized")
+        return None
+        
     try:
         result = supabase.table('travel_plans').select("*").eq('id', plan_id).execute()
         return result.data[0] if result.data else None
     except Exception as e:
-        print(f"Error retrieving travel plan: {e}")
+        logger.error(f"Error retrieving travel plan: {e}")
         return None
 
 def format_date(date_str):
@@ -716,6 +818,303 @@ def terms():
 @app.route('/faq')
 def faq():
     return render_template('faq.html')
+
+# API Endpoints for AJAX functionality
+@app.route('/api/validate-destination', methods=['POST'])
+def validate_destination():
+    """Validate if destination exists"""
+    try:
+        data = request.get_json()
+        destination = data.get('destination', '').strip()
+        
+        if not destination:
+            return jsonify({'valid': False, 'message': 'Destination is required'})
+        
+        if len(destination) < 2:
+            return jsonify({'valid': False, 'message': 'Destination name too short'})
+        
+        # Basic validation - could be enhanced with geocoding API
+        return jsonify({'valid': True, 'message': 'Destination looks good!'})
+    except Exception as e:
+        logger.error(f"Error validating destination: {e}")
+        return jsonify({'valid': False, 'message': 'Validation error'}), 500
+
+@app.route('/api/popular-destinations', methods=['GET'])
+def popular_destinations():
+    """Get popular destinations"""
+    try:
+        destinations = [
+            {'name': 'Paris, France', 'icon': '🗼', 'tags': ['Culture', 'Food', 'Romance']},
+            {'name': 'Tokyo, Japan', 'icon': '🗾', 'tags': ['Culture', 'Food', 'Technology']},
+            {'name': 'New York, USA', 'icon': '🗽', 'tags': ['City', 'Culture', 'Shopping']},
+            {'name': 'Bali, Indonesia', 'icon': '🏝️', 'tags': ['Beach', 'Nature', 'Relaxation']},
+            {'name': 'Rome, Italy', 'icon': '🏛️', 'tags': ['History', 'Culture', 'Food']},
+            {'name': 'London, UK', 'icon': '🏰', 'tags': ['Culture', 'History', 'Shopping']},
+            {'name': 'Dubai, UAE', 'icon': '🏙️', 'tags': ['Luxury', 'Shopping', 'Modern']},
+            {'name': 'Barcelona, Spain', 'icon': '🏖️', 'tags': ['Beach', 'Culture', 'Food']},
+        ]
+        return jsonify(destinations)
+    except Exception as e:
+        logger.error(f"Error fetching popular destinations: {e}")
+        return jsonify([]), 500
+
+@app.route('/api/plan/<plan_id>/share', methods=['GET'])
+def share_plan(plan_id):
+    """Generate shareable link for a plan"""
+    try:
+        plan = get_travel_plan(plan_id)
+        if not plan:
+            return jsonify({'error': 'Plan not found'}), 404
+        
+        share_url = url_for('generate_plan', plan_id=plan_id, _external=True)
+        return jsonify({
+            'url': share_url,
+            'title': f"Travel Plan for {plan['destination']}",
+            'description': f"{plan['days']} days trip for {plan['people']} people"
+        })
+    except Exception as e:
+        logger.error(f"Error generating share link: {e}")
+        return jsonify({'error': 'Failed to generate share link'}), 500
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get application statistics"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not available'}), 503
+            
+        plans_count = supabase.table('travel_plans').select('id', count='exact').execute()
+        guides_count = supabase.table('travel_guides').select('id', count='exact').execute()
+        hotels_count = supabase.table('hotel_searches').select('id', count='exact').execute()
+        
+        return jsonify({
+            'total_plans': plans_count.count if hasattr(plans_count, 'count') else 0,
+            'total_guides': guides_count.count if hasattr(guides_count, 'count') else 0,
+            'total_hotel_searches': hotels_count.count if hasattr(hotels_count, 'count') else 0,
+        })
+    except Exception as e:
+        logger.error(f"Error fetching stats: {e}")
+        return jsonify({'error': 'Failed to fetch stats'}), 500
+
+def markdown_to_pdf_text(markdown_text):
+    """Convert markdown text to plain text for PDF"""
+    # Remove markdown headers but keep the text
+    text = re.sub(r'^#{1,6}\s+(.+)$', r'\1', markdown_text, flags=re.MULTILINE)
+    # Remove bold and italic markers
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.+?)\*', r'\1', text)
+    # Remove list markers but keep the text
+    text = re.sub(r'^[\*\-]\s+', '• ', text, flags=re.MULTILINE)
+    return text
+
+@app.route('/api/plan/<plan_id>/export/pdf', methods=['GET'])
+def export_plan_to_pdf(plan_id):
+    """Export travel plan to PDF"""
+    try:
+        plan = get_travel_plan(plan_id)
+        if not plan:
+            return jsonify({'error': 'Plan not found'}), 404
+        
+        # Create PDF buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        
+        # Container for PDF elements
+        elements = []
+        
+        # Define styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=HexColor('#2563eb'),
+            spaceAfter=12,
+            alignment=TA_CENTER
+        )
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=HexColor('#1d4ed8'),
+            spaceAfter=8,
+            spaceBefore=12
+        )
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=6
+        )
+        
+        # Add title
+        title = f"Travel Plan for {plan['destination']}"
+        elements.append(Paragraph(title, title_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Add metadata
+        metadata = f"""
+        <b>Duration:</b> {plan['days']} days<br/>
+        <b>Travelers:</b> {plan['people']} people<br/>
+        <b>Budget:</b> {plan['budget'].title()}<br/>
+        <b>Accommodation:</b> {plan['accommodation'].title()}<br/>
+        <b>Activities:</b> {plan['activities'].title()}<br/>
+        <b>Interests:</b> {plan['interests']}<br/>
+        """
+        elements.append(Paragraph(metadata, normal_style))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Add content
+        content_lines = plan['content'].split('\n')
+        for line in content_lines:
+            line = line.strip()
+            if not line:
+                elements.append(Spacer(1, 0.1*inch))
+                continue
+            
+            # Detect headers
+            if line.startswith('# '):
+                elements.append(Paragraph(line[2:], title_style))
+            elif line.startswith('## '):
+                elements.append(Paragraph(line[3:], heading_style))
+            elif line.startswith('### '):
+                elements.append(Paragraph(line[4:], heading_style))
+            else:
+                # Clean up markdown
+                clean_line = markdown_to_pdf_text(line)
+                if clean_line:
+                    elements.append(Paragraph(clean_line, normal_style))
+        
+        # Add footer
+        elements.append(Spacer(1, 0.3*inch))
+        footer_text = f"Generated by PlanMyTriply AI on {datetime.now().strftime('%B %d, %Y')}"
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=HexColor('#64748b'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph(footer_text, footer_style))
+        
+        # Build PDF
+        doc.build(elements)
+        buffer.seek(0)
+        
+        filename = f"travel_plan_{plan['destination'].replace(' ', '_')}_{plan_id}.pdf"
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        logger.error(f"Error exporting plan to PDF: {e}\n{traceback.format_exc()}")
+        return jsonify({'error': 'Failed to export plan'}), 500
+
+@app.route('/api/currency/convert', methods=['GET'])
+def convert_currency():
+    """Convert currency using exchange rate API"""
+    try:
+        amount = float(request.args.get('amount', 100))
+        from_currency = request.args.get('from', 'USD').upper()
+        to_currency = request.args.get('to', 'EUR').upper()
+        
+        # Check cache first
+        cache_key = get_cache_key('currency', from_currency, to_currency)
+        cached_rate = get_from_cache(cache_key, max_age=3600)  # Cache for 1 hour
+        
+        if cached_rate:
+            rate = cached_rate
+        else:
+            # Use a free exchange rate API (exchangerate-api.com)
+            url = f"https://api.exchangerate-api.com/v4/latest/{from_currency}"
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            
+            if to_currency not in data['rates']:
+                return jsonify({'error': 'Invalid currency code'}), 400
+            
+            rate = data['rates'][to_currency]
+            set_cache(cache_key, rate)
+        
+        converted_amount = amount * rate
+        
+        return jsonify({
+            'from': from_currency,
+            'to': to_currency,
+            'amount': amount,
+            'converted': round(converted_amount, 2),
+            'rate': round(rate, 4)
+        })
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching exchange rate: {e}")
+        return jsonify({'error': 'Failed to fetch exchange rate'}), 500
+    except Exception as e:
+        logger.error(f"Error converting currency: {e}")
+        return jsonify({'error': 'Invalid request'}), 400
+
+@app.route('/api/budget-calculator', methods=['POST'])
+def calculate_budget():
+    """Calculate estimated budget for a trip"""
+    try:
+        data = request.get_json()
+        destination = data.get('destination', '')
+        days = int(data.get('days', 3))
+        people = int(data.get('people', 2))
+        budget_level = data.get('budget', 'medium')
+        
+        # Budget estimates per person per day (in USD)
+        budget_estimates = {
+            'budget': {
+                'accommodation': 30,
+                'food': 25,
+                'transportation': 15,
+                'activities': 20,
+                'misc': 10
+            },
+            'medium': {
+                'accommodation': 80,
+                'food': 50,
+                'transportation': 30,
+                'activities': 50,
+                'misc': 20
+            },
+            'luxury': {
+                'accommodation': 200,
+                'food': 100,
+                'transportation': 60,
+                'activities': 100,
+                'misc': 50
+            }
+        }
+        
+        estimates = budget_estimates.get(budget_level, budget_estimates['medium'])
+        
+        # Calculate totals
+        breakdown = {}
+        total = 0
+        for category, daily_cost in estimates.items():
+            category_total = daily_cost * days * people
+            breakdown[category] = category_total
+            total += category_total
+        
+        return jsonify({
+            'destination': destination,
+            'days': days,
+            'people': people,
+            'budget_level': budget_level,
+            'breakdown': breakdown,
+            'total': total,
+            'per_person': total / people,
+            'per_day': total / days,
+            'currency': 'USD'
+        })
+    except Exception as e:
+        logger.error(f"Error calculating budget: {e}")
+        return jsonify({'error': 'Failed to calculate budget'}), 400
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)

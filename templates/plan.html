@@ -770,28 +770,87 @@ function generateQRCode() {
 }
 
 function shareViaEmail() {
+    {% if plan_id %}
+    // Get share data from API
+    fetch(`/api/plan/{{ plan_id }}/share`)
+        .then(response => response.json())
+        .then(data => {
+            const subject = encodeURIComponent(data.title);
+            const body = encodeURIComponent(`${data.description}\n\nView the full plan here: ${data.url}`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        })
+        .catch(() => {
+            // Fallback
+            const subject = encodeURIComponent(`Travel Plan for {{ params.destination }}`);
+            const body = encodeURIComponent(`Check out my {{ params.days }}-day travel plan for {{ params.destination }}!\n\n${window.location.href}`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        });
+    {% else %}
     const subject = encodeURIComponent(`Travel Plan for {{ params.destination }}`);
     const body = encodeURIComponent(`Check out my {{ params.days }}-day travel plan for {{ params.destination }}!\n\n${window.location.href}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    {% endif %}
 }
 
 function shareViaWhatsApp() {
+    {% if plan_id %}
+    fetch(`/api/plan/{{ plan_id }}/share`)
+        .then(response => response.json())
+        .then(data => {
+            const text = encodeURIComponent(`${data.title}\n${data.description}\n\n${data.url}`);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        })
+        .catch(() => {
+            const text = encodeURIComponent(`Check out my {{ params.days }}-day travel plan for {{ params.destination }}!\n\n${window.location.href}`);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        });
+    {% else %}
     const text = encodeURIComponent(`Check out my {{ params.days }}-day travel plan for {{ params.destination }}!\n\n${window.location.href}`);
     window.open(`https://wa.me/?text=${text}`, '_blank');
+    {% endif %}
 }
 
 function copyToClipboard() {
+    {% if plan_id %}
+    fetch(`/api/plan/{{ plan_id }}/share`)
+        .then(response => response.json())
+        .then(data => {
+            navigator.clipboard.writeText(data.url).then(() => {
+                showToast('Link copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('Failed to copy link', 'error');
+            });
+        })
+        .catch(() => {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                showToast('Link copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('Failed to copy link', 'error');
+            });
+        });
+    {% else %}
     navigator.clipboard.writeText(window.location.href).then(() => {
         showToast('Link copied to clipboard!', 'success');
     }).catch(() => {
         showToast('Failed to copy link', 'error');
     });
+    {% endif %}
 }
 
 function downloadPDF() {
     // Show loading indicator
     showToast('Generating PDF...', 'info');
     
+    {% if plan_id %}
+    // Use backend API for PDF generation
+    window.location.href = `/api/plan/{{ plan_id }}/export/pdf`;
+    
+    // Show success after a delay
+    setTimeout(() => {
+        showToast('PDF download started!', 'success');
+    }, 1000);
+    {% else %}
+    // Fallback to client-side generation if no plan_id
     const content = document.querySelector('.markdown-content');
     const opt = {
         margin: [0.5, 0.5, 0.5, 0.5],
@@ -824,6 +883,7 @@ function downloadPDF() {
         console.error('PDF generation failed:', err);
         showToast('Failed to generate PDF. Please try again.', 'error');
     });
+    {% endif %}
 }
 
 function showToast(message, type = 'success') {
