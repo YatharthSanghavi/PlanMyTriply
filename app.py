@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, send_file, make_response
+from flask_compress import Compress
 import google.generativeai as genai
 import requests
 import json
@@ -34,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))  # For session management
+
+# Enable compression for better performance
+Compress(app)
 
 # Simple in-memory cache (for production, use Redis or Memcached)
 cache = {}
